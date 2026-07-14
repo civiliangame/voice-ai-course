@@ -30,8 +30,8 @@
     @keyframes slidein { from { opacity: 0; transform: translateY(6px); } to { opacity: 1; transform: none; } }
   }
 
-  .wordmark { display: block; }
-  :root[data-theme="dark"] .wordmark { filter: brightness(0) invert(1); opacity: .88; }
+  .wordmark { font-family: var(--sans); font-weight: 700; letter-spacing: -0.02em; color: var(--ink); }
+  .wordmark span { color: var(--accent); }
 
   .eyebrow { font-size: clamp(11px, 1.3vw, 14px); font-weight: 500;
     letter-spacing: .12em; text-transform: uppercase; color: var(--accent); margin-bottom: 1.2vh; }
@@ -56,7 +56,7 @@
   /* cover + dividers */
   .cover, .divider { display: none; padding-top: 0; }
   .cover.on, .divider.on { display: flex; flex-direction: column; justify-content: center; }
-  .covermark { height: clamp(48px, 9vh, 84px); width: auto; align-self: flex-start; margin-bottom: 3vh; }
+  .covermark { display: block; font-size: clamp(26px, 4.5vh, 40px); line-height: 1; margin-bottom: 3vh; }
   .cover h1::before, .divider h1::after { content: ""; display: block; width: 72px; height: 5px;
     background: var(--accent-bright); border-radius: 9999px; }
   .cover h1::before { margin-bottom: 3.4vh; }
@@ -87,7 +87,7 @@
     align-items: center; padding: 10px 8vw; font-family: var(--mono); font-size: 12px; color: var(--ghost);
     pointer-events: none; z-index: 4; }
   #hud .hudleft { display: flex; align-items: center; gap: 10px; }
-  .hudmark { height: 14px; width: auto; }
+  .hudmark { font-size: 13px; }
   #bar { position: fixed; bottom: 0; left: 0; height: 3px; background: var(--accent-bright); width: 0; z-index: 6; }
 
   /* TOC overlay */
@@ -114,7 +114,7 @@
 
 <!-- ============ COVER ============ -->
 <section class="cover">
-  <img class="wordmark covermark" src="data:image/png;base64,__WORDMARK__" alt="KindredPM">
+  <div class="wordmark covermark">Kindred<span>PM</span></div>
   <div class="wavebar" id="wave"></div>
   <div class="eyebrow">Samsung University · CS Dept · 6 Weeks</div>
   <h1>Building Real-Time Voice AI Agents</h1>
@@ -665,7 +665,7 @@
 </div>
 
 <div id="toc"><h2>Contents — click to jump</h2></div>
-<div id="hud"><span class="hudleft"><img class="wordmark hudmark" src="data:image/png;base64,__WORDMARK__" alt=""><span id="hud-l"></span></span><span id="hud-r"></span></div>
+<div id="hud"><span class="hudleft"><span class="wordmark hudmark">Kindred<span>PM</span></span><span id="hud-l"></span></span><span id="hud-r"></span></div>
 <div id="bar"></div>
 
 <script>
