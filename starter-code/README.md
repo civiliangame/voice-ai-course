@@ -36,6 +36,25 @@ python week1-talkbox/hello_grok.py
 If step 4 prints a sentence from Grok, you are unblocked for the homework.
 Everything else this week is plumbing around that call.
 
+## The server framework: FastAPI, every week
+
+All five milestone servers are **FastAPI** apps started with
+`uvicorn server:app --reload`. The framework choice is part of the curriculum:
+
+- **Week 1:** one HTTP endpoint + `StaticFiles`. You can read the entire server
+  in a minute — that's the point.
+- **Weeks 2–5:** the HTTP POST becomes a FastAPI **WebSocket** route
+  (`@app.websocket(...)`) carrying a continuous audio stream, which mirrors
+  1:1 how a telephony provider delivers a phone call to your backend.
+- **Why async matters:** FastAPI runs on asyncio. A voice server is many
+  concurrent long-lived streams, and one blocking call stutters *every* call
+  in the process — that's the week-5 golden rule, and FastAPI is where you
+  practice it.
+
+If you're new to FastAPI: `app = FastAPI()` creates the app, decorators like
+`@app.post("/answer")` register handlers, and uvicorn is the ASGI server that
+runs it all. That's all you need for week 1.
+
 ## The one fact to remember about the xAI API
 
 It is **OpenAI-SDK compatible**. One base URL, one key:

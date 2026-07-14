@@ -26,6 +26,11 @@ uvicorn server:app --reload --port 8000
 Open **http://localhost:8000** — it must be `localhost`: browsers refuse mic
 access on plain `http://` for any other host.
 
+`server.py` is a **FastAPI** app: `app = FastAPI()` plus one
+`@app.post("/answer")` route and a `StaticFiles` mount for the page —
+uvicorn is the ASGI server running it. This same app grows a WebSocket
+route in week 2, so the time you spend reading it now pays off all course.
+
 ## The recommended path (from slide 14)
 
 1. **Echo first (~10 min).** The scaffold already echoes your voice back.

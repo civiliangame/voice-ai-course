@@ -23,6 +23,24 @@ agent on the xAI Grok voice stack.
 5. **M5 Survivor** — native speech-to-speech, barge-in, watchdog
 6. **Demo day** — live conversation with one tool call and one barge-in
 
+## Tech stack
+
+Every milestone server is a **Python + [FastAPI](https://fastapi.tiangolo.com/)**
+app, run with uvicorn. FastAPI is load-bearing for this course, not incidental:
+
+- **Week 1** uses a plain FastAPI HTTP endpoint (`POST /answer`) plus
+  `StaticFiles` to serve the hold-to-talk page — the whole server is one file.
+- **Weeks 2–5** graduate to FastAPI's native **WebSocket** support for
+  continuous audio streaming — the same shape a real telephony media stream
+  arrives in.
+- FastAPI is **async-first**, which is the entire week-5 lesson ("never block
+  the event loop"): one asyncio process juggling recv/send/process tasks per
+  call, with no threads.
+
+Model calls go through the OpenAI SDK pointed at the xAI endpoint
+(`base_url="https://api.x.ai/v1"`); audio work uses numpy, soxr, and
+webrtcvad/Silero as the weeks progress.
+
 ## Getting started
 
 See [starter-code/week1-talkbox/README.md](starter-code/week1-talkbox/README.md).
