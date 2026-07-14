@@ -1,0 +1,500 @@
+<title>Building Real-Time Voice AI Agents — 6-Week Course</title>
+<style>
+  :root {
+    --bg: #FBFAF8;
+    --ink: #26221B;
+    --muted: #6E6656;
+    --accent: #B45309;
+    --accent-soft: #B4530918;
+    --line: #E5DFD2;
+    --card: #F5F2EA;
+    --code-bg: #EFEBE0;
+    --mono: ui-monospace, "SF Mono", "Cascadia Code", "JetBrains Mono", Consolas, monospace;
+    --sans: system-ui, "Segoe UI", "Helvetica Neue", Arial, sans-serif;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root {
+      --bg: #171410; --ink: #EAE4D8; --muted: #A69C8A;
+      --accent: #E8A33D; --accent-soft: #E8A33D1c;
+      --line: #2E2820; --card: #1E1913; --code-bg: #241F17;
+    }
+  }
+  :root[data-theme="dark"] {
+    --bg: #171410; --ink: #EAE4D8; --muted: #A69C8A;
+    --accent: #E8A33D; --accent-soft: #E8A33D1c;
+    --line: #2E2820; --card: #1E1913; --code-bg: #241F17;
+  }
+  :root[data-theme="light"] {
+    --bg: #FBFAF8; --ink: #26221B; --muted: #6E6656;
+    --accent: #B45309; --accent-soft: #B4530918;
+    --line: #E5DFD2; --card: #F5F2EA; --code-bg: #EFEBE0;
+  }
+  html { background: var(--bg); }
+  body {
+    background: var(--bg); color: var(--ink);
+    font-family: var(--sans); font-size: 16px; line-height: 1.6;
+    margin: 0; padding: 0;
+  }
+  .wrap { max-width: 920px; margin: 0 auto; padding: 48px 24px 96px; }
+  a { color: var(--accent); }
+
+  /* ---------- header ---------- */
+  .eyebrow {
+    font-family: var(--mono); font-size: 12px; letter-spacing: .14em;
+    text-transform: uppercase; color: var(--muted);
+  }
+  h1 {
+    font-size: clamp(30px, 5vw, 44px); font-weight: 750; letter-spacing: -0.025em;
+    line-height: 1.08; margin: 10px 0 14px; text-wrap: balance;
+  }
+  .lede { font-size: 18px; color: var(--muted); max-width: 62ch; margin: 0 0 22px; }
+  .wave { display: flex; align-items: center; gap: 3px; height: 34px; margin: 26px 0 8px; }
+  .wave span { width: 4px; border-radius: 2px; background: var(--accent); opacity: .85; }
+  .wave .q { opacity: .25; }
+
+  .chips { display: flex; flex-wrap: wrap; gap: 8px; margin: 20px 0 0; }
+  .chip {
+    font-family: var(--mono); font-size: 12.5px; padding: 5px 11px;
+    border: 1px solid var(--line); border-radius: 999px; color: var(--muted);
+    background: var(--card);
+  }
+  .chip b { color: var(--ink); font-weight: 600; }
+
+  /* ---------- sections ---------- */
+  section { margin-top: 56px; }
+  h2 {
+    font-size: 23px; font-weight: 700; letter-spacing: -0.015em; margin: 0 0 6px;
+  }
+  h2 .idx { font-family: var(--mono); color: var(--accent); font-weight: 600; font-size: 17px; margin-right: 10px; }
+  .rule { border: 0; border-top: 1px solid var(--line); margin: 10px 0 20px; }
+  p { max-width: 68ch; }
+  .dim { color: var(--muted); }
+
+  /* ---------- milestone ladder ---------- */
+  .ladder { display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 10px; margin-top: 18px; }
+  .rung {
+    border: 1px solid var(--line); border-radius: 8px; background: var(--card);
+    padding: 14px 16px;
+  }
+  .rung .m { font-family: var(--mono); font-size: 12px; color: var(--accent); letter-spacing: .08em; }
+  .rung h3 { margin: 4px 0 6px; font-size: 16px; font-weight: 700; }
+  .rung p { margin: 0; font-size: 14px; color: var(--muted); }
+
+  /* ---------- tables ---------- */
+  .tbl-scroll { overflow-x: auto; }
+  table { border-collapse: collapse; width: 100%; font-size: 15px; }
+  th { text-align: left; font-family: var(--mono); font-size: 12px; letter-spacing: .1em;
+       text-transform: uppercase; color: var(--muted); font-weight: 600;
+       padding: 8px 14px 8px 0; border-bottom: 1px solid var(--line); }
+  td { padding: 9px 14px 9px 0; border-bottom: 1px solid var(--line); vertical-align: top; }
+  td.num { font-variant-numeric: tabular-nums; font-family: var(--mono); font-size: 14px; }
+
+  /* ---------- weeks ---------- */
+  .week { border: 1px solid var(--line); border-radius: 10px; margin-top: 18px; background: var(--card); }
+  .week-head { padding: 20px 22px 6px; }
+  .week-head .eyebrow { color: var(--accent); }
+  .week-head h3 { margin: 6px 0 4px; font-size: 20px; font-weight: 720; letter-spacing: -0.015em; }
+  .week-head .goal { color: var(--muted); font-size: 15px; margin: 4px 0 0; max-width: 70ch; }
+  .week-meta { display: flex; flex-wrap: wrap; gap: 8px; padding: 12px 22px 16px; }
+  .tag { font-family: var(--mono); font-size: 12px; padding: 3px 9px; border-radius: 999px;
+         background: var(--accent-soft); color: var(--accent); }
+
+  details { border-top: 1px solid var(--line); }
+  summary {
+    cursor: pointer; padding: 12px 22px; font-family: var(--mono); font-size: 13px;
+    color: var(--muted); list-style: none; user-select: none;
+  }
+  summary::-webkit-details-marker { display: none; }
+  summary::before { content: "▸ "; color: var(--accent); }
+  details[open] summary::before { content: "▾ "; }
+  summary:focus-visible { outline: 2px solid var(--accent); outline-offset: -2px; }
+  .slides { padding: 4px 22px 20px; }
+
+  .slide { padding: 12px 0; border-top: 1px dashed var(--line); }
+  .slide:first-child { border-top: 0; }
+  .slide h4 { margin: 0 0 6px; font-size: 15.5px; font-weight: 700; }
+  .slide h4 .sn { font-family: var(--mono); font-weight: 600; font-size: 12.5px; color: var(--accent); margin-right: 8px; }
+  .slide ul { margin: 0 0 6px; padding-left: 20px; font-size: 14.5px; }
+  .slide li { margin: 3px 0; max-width: 75ch; }
+  .note { font-size: 13.5px; color: var(--muted); margin: 4px 0 0; max-width: 75ch; }
+  .note b { color: var(--ink); font-weight: 600; }
+
+  code {
+    font-family: var(--mono); font-size: .87em; background: var(--code-bg);
+    padding: 1.5px 5px; border-radius: 4px; white-space: nowrap;
+  }
+  .demo { margin: 8px 0 0; font-size: 14px; }
+  .demo dt { font-family: var(--mono); font-size: 12px; letter-spacing: .1em; text-transform: uppercase; color: var(--muted); margin-top: 10px; }
+  .demo dd { margin: 4px 0 0 0; max-width: 72ch; }
+
+  .callout {
+    border-left: 3px solid var(--accent); background: var(--accent-soft);
+    padding: 12px 16px; border-radius: 0 8px 8px 0; margin: 18px 0; max-width: 74ch;
+  }
+  .callout p { margin: 0; font-size: 14.5px; }
+
+  footer { margin-top: 72px; border-top: 1px solid var(--line); padding-top: 18px;
+           font-size: 13px; color: var(--muted); }
+  @media (prefers-reduced-motion: no-preference) {
+    details .slides { animation: fade .18s ease-out; }
+    @keyframes fade { from { opacity: 0; } to { opacity: 1; } }
+  }
+</style>
+
+<div class="wrap">
+  <header>
+    <div class="wave" id="wave" aria-hidden="true"></div>
+    <div class="eyebrow">Samsung University · CS Dept · 6 Weeks · 60–90 min/wk</div>
+    <h1>Building Real-Time Voice AI Agents</h1>
+    <p class="lede">From µ-law frames to a talking, tool-using, interruptible agent — built on the xAI Grok Voice stack, with the wider provider landscape (Gemini Live, OpenAI Realtime) in the final week.</p>
+    <div class="chips">
+      <span class="chip">Platform <b>xAI API → Gemini (wk 6)</b></span>
+      <span class="chip">Project <b>build-along voice agent</b></span>
+      <span class="chip">Audience <b>CS students, Python-proficient</b></span>
+      <span class="chip">Grading <b>behavior, not style</b></span>
+    </div>
+  </header>
+
+  <section>
+    <h2>The Build-Along Project: Talkbox → Agent</h2>
+    <hr class="rule">
+    <p>Students build a browser-based voice agent in Python that <b>talks — via Grok — from week 1</b> and gains a new capability every week. Browser mic ≈ caller, WebSocket ≈ telephony media stream — everything maps 1:1 onto a real phone deployment (an optional stretch goal connects a real Telnyx/Twilio number via a provided reference bridge).</p>
+    <div class="ladder">
+      <div class="rung"><div class="m">WK 1 · M1</div><h3>Talkbox</h3><p>Push-to-talk Grok agent: mic clip → xAI STT → Grok → xAI TTS → spoken answer.</p></div>
+      <div class="rung"><div class="m">WK 2 · M2</div><h3>Plumber</h3><p>Real-time plumbing: continuous streaming, resampling, µ-law round-trip (simulated phone line), buffered playout.</p></div>
+      <div class="rung"><div class="m">WK 3 · M3</div><h3>Listener</h3><p>Drop the button: VAD detects turns automatically — a hands-free conversation.</p></div>
+      <div class="rung"><div class="m">WK 4 · M4</div><h3>Brain</h3><p>Function calling with one real tool, a persona, and sentence-streamed TTS.</p></div>
+      <div class="rung"><div class="m">WK 5 · M5</div><h3>Survivor</h3><p>Native speech-to-speech (Grok Voice Agent API) with barge-in, watchdog, reconnection.</p></div>
+      <div class="rung"><div class="m">WK 6</div><h3>Demo Day</h3><p>Polish, a personality, and a 5-minute live demo — tool call and barge-in required.</p></div>
+    </div>
+  </section>
+
+  <!-- ================= WEEK 1 ================= -->
+  <section>
+    <h2><span class="idx">WK 1</span>The Anatomy of a Voice Agent</h2>
+    <hr class="rule">
+    <div class="week">
+      <div class="week-head">
+        <p class="goal">Why latency dominates everything; the two dominant architectures (cascade vs. native speech-to-speech); how audio physically travels from a caller to a model and back — plus an in-class xAI quickstart, because the week-1 homework is already a talking Grok agent.</p>
+      </div>
+      <div class="week-meta">
+        <span class="tag">M1 Talkbox</span><span class="tag">75–90 min</span><span class="tag">in class: xAI key @ console.x.ai</span>
+      </div>
+      <details>
+        <summary>Full slide deck (15 slides)</summary>
+        <div class="slides">
+          <div class="slide"><h4><span class="sn">01</span>Voice Is the Hardest UI</h4>
+            <ul><li>Hook: “By week 6 you'll have built an AI you can talk to — and interrupt.”</li></ul>
+            <p class="note"><b>Note:</b> open with a 30-second live demo of the <em>finished</em> project, including an interruption. Then: “everything you just heard is a lie held together by buffering.”</p></div>
+          <div class="slide"><h4><span class="sn">02</span>What You'll Build</h4>
+            <ul><li>The milestone ladder, one sentence each</li><li>Graded on behavior: if the TA can talk to it, you pass</li></ul></div>
+          <div class="slide"><h4><span class="sn">03</span>Where Voice Agents Live Today</h4>
+            <ul><li>Call centers; vertical agents (property management, healthcare, restaurants); assistants</li><li>Most business calls are routine and structured — ideal automation targets</li></ul>
+            <p class="note"><b>Note:</b> pick one vertical (property management works well: leasing calls, 2am maintenance emergencies) as the running example all six weeks.</p></div>
+          <div class="slide"><h4><span class="sn">04</span>Why Voice Is Hard (vs. a Chatbot)</h4>
+            <ul><li>No undo — spoken words can't be edited after delivery</li><li>Latency is felt viscerally: 3 s of phone silence feels broken</li><li>Ambiguity: no punctuation, homophones, noise</li><li>Turn-taking: humans interrupt, backchannel, pause mid-thought</li></ul></div>
+          <div class="slide"><h4><span class="sn">05</span>The Latency Budget</h4>
+            <ul><li>Human turn gap: ~200–300 ms; “feels responsive” target: under ~1 s mouth-to-ear</li><li>Stacked-bar budget: network + buffering + endpointing + inference + synthesis + playout</li></ul>
+            <p class="note"><b>Note:</b> endpointing usually costs more than model inference — you must wait through silence to know the user finished. That fight is week 3.</p></div>
+          <div class="slide"><h4><span class="sn">06</span>Architecture #1: The Cascade</h4>
+            <ul><li>Mic → STT → LLM → TTS → speaker; text is the interface between stages</li><li>Modular, debuggable, swappable — but latency stacks and tone is lost</li></ul></div>
+          <div class="slide"><h4><span class="sn">07</span>Architecture #2: Native Speech-to-Speech</h4>
+            <ul><li>One multimodal model, audio in / audio out, over a bidirectional WebSocket</li><li>Examples: <b>xAI Grok Voice Agent API</b> (our platform), Gemini Live, OpenAI Realtime</li><li>The OpenAI Realtime wire protocol is a de facto standard — xAI is compatible with it</li><li>Lower latency, hears tone; less controllable, provider holds session state, quota limits</li></ul>
+            <p class="note"><b>Note:</b> learn the event model once (week 5) and you can drive xAI, OpenAI, and — with small diffs — Gemini.</p></div>
+          <div class="slide"><h4><span class="sn">08</span>Cascade vs. Native: When to Use Which</h4>
+            <ul><li>Compare: latency / control / debuggability / cost / voice quality</li><li>Rule of thumb: cascade for control and auditability; native when conversational feel is the product</li><li>A well-built agent core works behind either</li></ul></div>
+          <div class="slide"><h4><span class="sn">09</span>How Audio Travels: The Phone Path</h4>
+            <ul><li>Caller → carrier → telephony provider → WebSocket to your server</li><li>Audio arrives as JSON: base64 8 kHz µ-law, ~20 ms chunks, 50 msgs/sec</li><li>Control events on the same socket: start, stop, mark, clear</li></ul>
+            <p class="note"><b>Note:</b> show one redacted media message; decode its payload live in a REPL — “this is a phone call.”</p></div>
+          <div class="slide"><h4><span class="sn">10</span>How Audio Travels: The Browser Path (Our Project)</h4>
+            <ul><li><code>getUserMedia</code> → Web Audio → WebSocket → Python — same shape, no carrier</li><li>Draw the 1:1 mapping onto the phone path</li></ul></div>
+          <div class="slide"><h4><span class="sn">11</span>A Production Topology</h4>
+            <ul><li>Provider → WS handler → preprocessing (decode/resample/denoise) → VAD → model session → paced sender → provider</li><li>Sidecars: transcripts, database, schedulers, human handoff</li></ul>
+            <p class="note"><b>Note:</b> tag each block with its week number — this diagram is the course's table of contents. Students should photograph it.</p></div>
+          <div class="slide"><h4><span class="sn">12</span>Everything Is a Stream</h4>
+            <ul><li>No request/response: long-lived concurrent streams; one call = many asyncio tasks</li><li>Golden rule preview: never block the event loop (week 5)</li></ul></div>
+          <div class="slide"><h4><span class="sn">13</span>Your Toolkit: The xAI API in 90 Seconds</h4>
+            <ul><li><code>https://api.x.ai/v1</code>, Bearer auth, key from console.x.ai; OpenAI-SDK compatible</li><li>The three calls for this week's homework: STT · Grok chat · TTS</li><li>Live, in class: everyone creates a key and runs a 3-line Grok completion</li></ul>
+            <p class="note"><b>Note:</b> key/billing problems are the #1 homework blocker — find them now, not Sunday night.</p></div>
+          <div class="slide"><h4><span class="sn">14</span>Milestone 1: Talkbox</h4>
+            <ul><li>Push-to-talk Grok agent: hold, ask, release — hear Grok answer out loud</li><li>Scaffold given (record button + playback + server stub); you write the cascade: clip → xAI STT → Grok → xAI TTS</li><li>Recommended: echo the clip first (plumbing test), then swap in the three xAI calls</li><li>Instrument it: log per-stage wall-clock time (STT / Grok / TTS)</li></ul>
+            <p class="note"><b>Note:</b> the timing logs are the pedagogical core — their own numbers become the latency budget made personal, and week 4's streaming is measured against this baseline.</p></div>
+          <div class="slide"><h4><span class="sn">15</span>Homework</h4>
+            <ul><li>M1 due before week 2 — done = the TA hears a sensible spoken answer</li><li>Deliverable: measured latency breakdown + which stage surprised you</li><li>“Talkbox is push-to-talk — list everything that must become automatic before it's a phone call” (the syllabus, rediscovered)</li><li>Skim: one provider's media-stream docs; xAI Voice Agent API event list</li></ul></div>
+          <dl class="demo"><dt>Live demos</dt><dd>Finished-project demo · decode a real media-stream message in the REPL</dd>
+          <dt>Pitfalls to warn</dt><dd>Raw binary WS frames instead of the JSON envelope · mic permissions need localhost/HTTPS</dd></dl>
+        </div>
+      </details>
+    </div>
+  </section>
+
+  <!-- ================= WEEK 2 ================= -->
+  <section>
+    <h2><span class="idx">WK 2</span>Audio for Engineers Who Skipped DSP</h2>
+    <hr class="rule">
+    <div class="week">
+      <div class="week-head">
+        <p class="goal">PCM, sample rates, µ-law, framing, resampling, playout buffers. The least glamorous, most load-bearing week — every later “sounds weird” bug traces back here.</p>
+      </div>
+      <div class="week-meta"><span class="tag">M2 Plumber</span><span class="tag">75–90 min</span></div>
+      <details>
+        <summary>Full slide deck (14 slides)</summary>
+        <div class="slides">
+          <div class="slide"><h4><span class="sn">01</span>Sound Becomes Numbers, Numbers Become Bugs</h4>
+            <p class="note"><b>Note:</b> promise: after today, <code>int16</code>, 8000 Hz, and µ-law never scare them again. It's all numpy arrays.</p></div>
+          <div class="slide"><h4><span class="sn">02</span>Sampling &amp; Quantization</h4>
+            <ul><li>Rates in the wild: 8 k phone · 16 k speech models · 24 k TTS · 44.1 k music</li><li>Nyquist in one line; int16 PCM as the lingua franca</li><li>1 second of phone audio = 16 KB</li></ul></div>
+          <div class="slide"><h4><span class="sn">03</span>Why Phones Sound Like Phones: 8 kHz &amp; G.711</h4>
+            <ul><li>The 1970s standard is still the floor; ~4 kHz ceiling — bad for “s” vs “f”</li><li>Models want 16 k+ → upsample everything off a phone line</li></ul>
+            <p class="note"><b>Note:</b> play the same sentence at 44.1 k then 8 k — the class <em>hears</em> the week's motivation.</p></div>
+          <div class="slide"><h4><span class="sn">04</span>µ-law: 1972 Compression You Still Must Handle</h4>
+            <ul><li>16-bit linear → 8-bit logarithmic (hearing is log — spend precision on quiet)</li><li>First op on inbound phone audio: base64-decode, then µ-law-decode. Wrong order = loud static</li></ul></div>
+          <div class="slide"><h4><span class="sn">05</span>Frames: Audio Arrives in 20 ms Pieces</h4>
+            <ul><li>160 samples @ 8 kHz, steady 50/sec cadence; VADs require exact 10/20/30 ms frames</li><li>Real-time audio is a metronome, not a firehose</li></ul></div>
+          <div class="slide"><h4><span class="sn">06</span>Resampling: 8 k ↔ 16 k ↔ 24 k</h4>
+            <ul><li>The rate zoo in one call; naive drop/duplicate aliases and sounds metallic</li><li>Use a real streaming resampler (e.g. soxr); persist state across chunks or get periodic clicks</li></ul>
+            <p class="note"><b>Note:</b> say the chunk-boundary gotcha twice — it will be half of the M2 bugs.</p></div>
+          <div class="slide"><h4><span class="sn">07</span>Bytes, Endianness, and the Bugs You'll Meet</h4>
+            <ul><li>int16-LE vs float32 [−1,1]: browsers/ML use float, telephony uses int — convert deliberately</li><li>Debug ritual: write the buffer to .wav and <em>look</em> at it in Audacity</li></ul></div>
+          <div class="slide"><h4><span class="sn">08</span>Anatomy of a Media-Stream Message</h4>
+            <ul><li><code>{"event":"media","media":{"payload":"&lt;base64 µ-law&gt;"}}</code> plus start/stop/mark/clear</li><li>Our browser project mirrors this format on purpose</li></ul></div>
+          <div class="slide"><h4><span class="sn">09</span>Jitter and the Playout Buffer</h4>
+            <ul><li>Networks deliver unevenly; speakers need perfect evenness → buffer 40–100 ms</li><li>The course's central tradeoff appears: latency vs. robustness</li></ul></div>
+          <div class="slide"><h4><span class="sn">10</span>Cleaning the Signal: AEC · NS · AGC</h4>
+            <ul><li>Echo cancellation (critical for barge-in), noise suppression (neural ≫ classical on non-stationary noise), gain control</li><li>Off-the-shelf pipeline stage (WebRTC APM); order matters: AEC → NS → VAD</li></ul></div>
+          <div class="slide"><h4><span class="sn">11</span>The Full Pipeline, Assembled</h4>
+            <ul><li>In: base64 → µ-law decode → PCM 8 k → resample 16 k → clean → VAD → model</li><li>Out: model 24 k → 8 k → µ-law → base64 → JSON</li><li>Every arrow is a place to log, buffer, and get bytes wrong — this diagram is the M2 spec</li></ul></div>
+          <div class="slide"><h4><span class="sn">12</span>The Best Pipeline Is No Pipeline</h4>
+            <ul><li>The xAI Voice Agent API accepts <code>audio/pcmu</code> (µ-law 8 kHz) directly</li><li>A phone↔Grok bridge can relay base64 µ-law both ways: <b>zero transcoding</b></li><li>We build the pipeline anyway: browsers don't speak µ-law; the cascade needs PCM; production debugging is this material</li></ul>
+            <p class="note"><b>Note:</b> design principle — negotiate a common format end-to-end instead of converting in the middle. Only possible if you know enough codecs to ask.</p></div>
+          <div class="slide"><h4><span class="sn">13</span>Milestone 2: Plumber</h4>
+            <ul><li>Upgrade Talkbox from clip-upload to continuous WebSocket streaming (the button now gates the stream)</li><li>Route mic audio through a simulated phone line (8 kHz µ-law round-trip) before STT; buffered playout for the reply</li><li>Done: still answers questions, click-free — and you report STT accuracy with vs without the phone line</li></ul>
+            <p class="note"><b>Note:</b> students see the transcript degrade through the phone line — the codec lesson made concrete. Diagnosis: screeching = endianness/scaling; rhythmic clicks = chunk-boundary resampling.</p></div>
+          <div class="slide"><h4><span class="sn">14</span>Homework</h4>
+            <ul><li>“Outbound audio clicks every 20 ms — most likely cause and fix?”</li><li>“What happens with a 0 ms playout buffer? A 500 ms one?”</li></ul></div>
+          <dl class="demo"><dt>Live demos</dt><dd>44.1 k vs 8 k listening test · REPL decode of a media message to a waveform plot · Audacity debugging of a corrupted buffer · neural noise suppression before/after</dd></dl>
+        </div>
+      </details>
+    </div>
+  </section>
+
+  <!-- ================= WEEK 3 ================= -->
+  <section>
+    <h2><span class="idx">WK 3</span>Turn-Taking: VAD, Endpointing &amp; Interruptions</h2>
+    <hr class="rule">
+    <div class="week">
+      <div class="week-head">
+        <p class="goal">Knowing when the user is talking — and when they're done — is its own hard subproblem, and the one that most determines whether an agent feels natural.</p>
+      </div>
+      <div class="week-meta"><span class="tag">M3 Listener</span><span class="tag">75–90 min</span></div>
+      <details>
+        <summary>Full slide deck (13 slides)</summary>
+        <div class="slides">
+          <div class="slide"><h4><span class="sn">01</span>The Hardest Problem Nobody Talks About</h4>
+            <p class="note"><b>Note:</b> open with two failure recordings — an agent that interrupts, and one that leaves 4 s of dead air. Both had perfect speech recognition.</p></div>
+          <div class="slide"><h4><span class="sn">02</span>What Is a “Turn”?</h4>
+            <ul><li>Humans exchange turns in ~200 ms — faster than reaction time; we <em>predict</em> turn ends</li><li>Backchannels (“uh-huh”) aren't turn claims; mid-thought pauses aren't turn ends</li></ul>
+            <p class="note"><b>Note:</b> punchline — silence can't define a turn boundary, yet silence is mostly what we measure. The week is coping strategies for that gap.</p></div>
+          <div class="slide"><h4><span class="sn">03</span>VAD: Three Generations</h4>
+            <ul><li>Energy threshold → classical statistical (webrtcvad) → neural (Silero)</li><li>Production pattern: cheap VAD as fast gate, neural for decisions that matter</li></ul></div>
+          <div class="slide"><h4><span class="sn">04</span>VAD Errors and Their Costs</h4>
+            <ul><li>False positive: agent halts for a door slam. False negative: agent talks over the caller, first words clipped</li><li>Tuning = choosing which error you prefer; phone agents lean patient</li></ul></div>
+          <div class="slide"><h4><span class="sn">05</span>Endpointing: Deciding the User Finished</h4>
+            <ul><li>Wait N ms of continuous silence after speech, then commit the turn</li><li>These are literal xAI <code>turn_detection</code> fields: <code>threshold</code>, <code>silence_duration_ms</code>, <code>prefix_padding_ms</code>, <code>idle_timeout_ms</code></li><li>Gemini Live: same ideas, different names — learn concepts, map names</li><li>Every ms of required silence is added to <em>every</em> response</li></ul>
+            <p class="note"><b>Note:</b> students will set these exact JSON fields in week 5 — flag that this slide is directly actionable.</p></div>
+          <div class="slide"><h4><span class="sn">06</span>The Patience Dial</h4>
+            <ul><li>Eager: snappy but splits “I live at…” into two turns. Patient: never interrupts, dead air everywhere</li><li>Tune per audience; adapting dynamically (mid-number, mid-list) is the advanced move</li></ul></div>
+          <div class="slide"><h4><span class="sn">07</span>Semantic Endpointing (Horizon)</h4>
+            <ul><li>Use the transcript-so-far to judge completeness — “I live at” is obviously unfinished</li><li>Native models increasingly do this internally</li></ul></div>
+          <div class="slide"><h4><span class="sn">08</span>Barge-In: The User Interrupts the Agent</h4>
+            <ul><li>Detect → stop playback <em>immediately</em> → flush every buffer to the speaker → cancel in-flight response → listen</li><li>Go silent within ~100–300 ms or it feels like being talked over</li><li>Realtime-API shape: model sends <code>input_audio_buffer.speech_started</code>; you flush and send <code>clear</code> downstream — that reaction <em>is</em> barge-in</li></ul></div>
+          <div class="slide"><h4><span class="sn">09</span>The Echo Problem: Your Agent Hears Itself</h4>
+            <ul><li>Speakerphone echo → naive barge-in triggers on the agent's own voice → it interrupts itself, forever</li><li>Fixes: AEC + state gating (<code>agent_is_speaking</code> flag raises the evidence bar)</li></ul></div>
+          <div class="slide"><h4><span class="sn">10</span>Don't Stream Silence</h4>
+            <ul><li>VAD-gated streaming with prefix padding; silence costs quota, money, and endpointing accuracy</li></ul></div>
+          <div class="slide"><h4><span class="sn">11</span>The Turn-Taking State Machine</h4>
+            <ul><li>IDLE · USER_SPEAKING · AGENT_SPEAKING · INTERRUPTED, with events as transitions</li><li>“If you can't place a bug on this diagram, you don't understand it yet”</li></ul>
+            <p class="note"><b>Note:</b> build it live on the board with class input — it becomes their M3/M5 design doc.</p></div>
+          <div class="slide"><h4><span class="sn">12</span>Milestone 3: Listener</h4>
+            <ul><li><b>Drop the button</b>: VAD + endpointing decide turns; end-of-turn sends the trimmed utterance through the cascade automatically</li><li>Done: a hands-free multi-turn conversation — mid-sentence pauses don't split turns, noise doesn't trigger Grok calls</li></ul>
+            <p class="note"><b>Note:</b> the week the project starts feeling like magic — removing the button is the whole lecture made real. False triggers cost money; mention it, it lands.</p></div>
+          <div class="slide"><h4><span class="sn">13</span>Homework</h4>
+            <ul><li>“Agent responds before users finish their phone number — which knobs, at what cost?”</li><li>“Describe the buffer-flush chain for barge-in in your architecture”</li></ul></div>
+          <dl class="demo"><dt>Live demos</dt><dd>Failure recordings · Silero speech-probability meter on the room mic · whiteboard state machine</dd>
+          <dt>Pitfalls to warn</dt><dd>webrtcvad hard-requires exact frame sizes · missing prefix padding clips first syllables · test in a noisy room, not just a quiet one</dd></dl>
+        </div>
+      </details>
+    </div>
+  </section>
+
+  <!-- ================= WEEK 4 ================= -->
+  <section>
+    <h2><span class="idx">WK 4</span>The Brain: Grok, Tools &amp; Prompting for Speech</h2>
+    <hr class="rule">
+    <div class="week">
+      <div class="week-head">
+        <p class="goal">The agent already talks — this week it gets smart: function calling against real data, a persona, sentence-streamed TTS that halves latency, and prompting for the ear instead of the eye.</p>
+      </div>
+      <div class="week-meta"><span class="tag">M4 Brain</span><span class="tag">75–90 min</span><span class="tag">beat your M1 latency</span></div>
+      <details>
+        <summary>Full slide deck (12 slides)</summary>
+        <div class="slides">
+          <div class="slide"><h4><span class="sn">01</span>Hands, a Name, and Half Your Latency Back</h4>
+            <p class="note"><b>Note:</b> demo finished M4 up front — hands-free question, Grok answer, visible tool call in the server logs.</p></div>
+          <div class="slide"><h4><span class="sn">02</span>The Cascade You've Been Building</h4>
+            <ul><li>Three weeks in: mic → VAD → <b>xAI STT</b> → <b>Grok</b> → <b>xAI TTS</b> → buffered playout — students built every box</li><li>Text is the interface → the transcript is your debugger; the brain unit-tests without audio</li></ul>
+            <p class="note"><b>Note:</b> recap-as-confidence-moment: put the week-1 topology back up and check off what they've built.</p></div>
+          <div class="slide"><h4><span class="sn">03</span>Where Your Milliseconds Went</h4>
+            <ul><li>The class's own M1 latency logs: STT + Grok + TTS run sequentially</li><li>Worst offender: waiting for the <em>whole</em> Grok reply before TTS starts — streaming fixes it today</li><li>Week 5 fixes the rest: one model, one socket, no text bottleneck</li></ul>
+            <p class="note"><b>Note:</b> use real numbers students submitted with M1 — nothing motivates like their own logs.</p></div>
+          <div class="slide"><h4><span class="sn">04</span>Streaming: Never Wait for the Whole Answer</h4>
+            <ul><li>Sentence-chunked TTS: playback starts after the <em>first</em> sentence, not the last</li><li>Typically cuts perceived latency by more than half; now you own an ordered TTS queue</li></ul></div>
+          <div class="slide"><h4><span class="sn">05</span>Function Calling: Giving the Brain Hands</h4>
+            <ul><li>Describe functions (name, JSON-schema params, description) → model requests calls → you execute and return results</li><li>The description <em>is</em> the interface; Grok supports parallel calls — return all results before continuing</li></ul>
+            <p class="note"><b>Note:</b> live A/B a vaguely-described tool (never called) vs a precise one (called reliably).</p></div>
+          <div class="slide"><h4><span class="sn">06</span>Tool Design for Voice</h4>
+            <ul><li>Return data, not prose; errors are data too — <code>{"status":"error",…}</code> lets the model recover in speech</li><li>Keep tools &lt;1 s or hold the floor first; make <code>book_appointment</code> idempotent — callers repeat themselves</li></ul></div>
+          <div class="slide"><h4><span class="sn">07</span>Prompting for the Ear, Not the Eye</h4>
+            <ul><li>No markdown — it gets read aloud, asterisks and all; 1–3 sentence turns; front-load answers</li><li>Numbers and addresses written the way they're spoken; confirm digit strings back</li><li>Persona in the system prompt: name, role, limits, when to hand off</li></ul>
+            <p class="note"><b>Note:</b> read a markdown response aloud verbatim. Gets a laugh; makes the point permanent.</p></div>
+          <div class="slide"><h4><span class="sn">08</span>State and Memory</h4>
+            <ul><li>Three layers: the turn (prompt) · the conversation (history you resend) · the world (database, via tools)</li><li>Rule: anything that must survive a dropped call goes in the database</li></ul></div>
+          <div class="slide"><h4><span class="sn">09</span>Multi-Agent Architectures</h4>
+            <ul><li>Triage/router classifies intent → domain specialist with its own prompt, tools, history</li><li>Channel adapters: same brain over voice, SMS, email — transport out of business logic</li></ul></div>
+          <div class="slide"><h4><span class="sn">10</span>Guardrails for a Live Call</h4>
+            <ul><li>No human review between generation and delivery</li><li>“The prompt is a request; the <em>system</em> enforces”: caps, filters, deterministic escalation, tools as source of truth</li></ul></div>
+          <div class="slide"><h4><span class="sn">11</span>Milestone 4: Brain</h4>
+            <ul><li>One real tool via function calling (e.g. <code>check_apartment_availability</code>) + history across turns + a named persona</li><li><b>Sentence-streamed TTS</b> — first audio out before generation finishes</li><li>Done: hands-free 3+ turns, one visible tool call, latency measurably below the M1 baseline</li></ul>
+            <p class="note"><b>Note:</b> streaming is core this week, not stretch — students beat the M1 numbers they've carried for three weeks. Voluntary latency leaderboard.</p></div>
+          <div class="slide"><h4><span class="sn">12</span>Homework</h4>
+            <ul><li>“Your tool takes 4 s — two techniques to keep the call alive, and their tradeoffs”</li><li>“Why must <code>book_appointment</code> be idempotent in voice specifically?”</li><li>Required skim: the Voice Agent API event list — next week uses all of it</li></ul></div>
+          <dl class="demo"><dt>Pitfalls to warn</dt><dd>Wrong base URL / unset key · TTS-ing raw markdown · synchronous API calls blocking the loop · sending untrimmed audio to STT</dd></dl>
+        </div>
+      </details>
+    </div>
+  </section>
+
+  <!-- ================= WEEK 5 ================= -->
+  <section>
+    <h2><span class="idx">WK 5</span>Going Native: The Voice Agent API &amp; Reliability</h2>
+    <hr class="rule">
+    <div class="week">
+      <div class="week-head">
+        <p class="goal">Replace the cascade with a native speech-to-speech session over <code>wss://api.x.ai/v1/realtime</code>, master the event protocol, then add the layer that separates demos from products: watchdogs, reconnection, resumption.</p>
+      </div>
+      <div class="week-meta"><span class="tag">M5 Survivor</span><span class="tag">90 min — densest week</span></div>
+      <details>
+        <summary>Full slide deck (13 slides)</summary>
+        <div class="slides">
+          <div class="slide"><h4><span class="sn">01</span>Going Native (and Staying Alive)</h4>
+            <ul><li>Part 1: replace three API calls with one WebSocket. Part 2: everything fails mid-sentence</li></ul>
+            <p class="note"><b>Note:</b> the cascade isn't wasted — it's what you debug with, fall back to, and use on text channels.</p></div>
+          <div class="slide"><h4><span class="sn">02</span>The Voice Agent API Mental Model</h4>
+            <ul><li><code>wss://api.x.ai/v1/realtime?model=grok-voice-latest</code>; typed JSON events both directions</li><li>Audio up via <code>input_audio_buffer.append</code>; speech down via <code>response.output_audio.delta</code></li><li>STT, VAD, endpointing, LLM, TTS all live server-side — you configure instead of build</li></ul></div>
+          <div class="slide"><h4><span class="sn">03</span>The Handshake (Order Matters)</h4>
+            <ul><li>Connect → <code>conversation.created</code> → you send <code>session.update</code> → <code>session.updated</code> → <em>only now</em> stream audio</li><li>Gate the send loop on a ready flag — audio sent early is processed with wrong settings</li><li>Greet via one-off response instructions, not a fake user message (which the model echoes and elaborates)</li></ul></div>
+          <div class="slide"><h4><span class="sn">04</span><code>session.update</code>: Weeks 2–3 as JSON</h4>
+            <ul><li><code>instructions</code>, <code>voice</code> (eve · ara · rex · sal · leo · custom)</li><li><code>audio.*.format</code>: <code>audio/pcm</code> at your rate, or <code>audio/pcmu</code> — the phone codec (week 2!)</li><li><code>turn_detection</code>: server VAD with the week-3 knobs, verbatim</li><li>Extras: transcription <code>language_hint</code> + <code>keyterms</code>, pronunciation <code>replace</code>, output <code>speed</code>, <code>reasoning.effort</code></li></ul>
+            <p class="note"><b>Note:</b> the payoff slide — nothing here is new, it's the whole course rendered as config. Match formats end-to-end to avoid pointless resampling.</p></div>
+          <div class="slide"><h4><span class="sn">05</span>Barge-In, For Real This Time</h4>
+            <ul><li>On <code>input_audio_buffer.speech_started</code>: stop playback, flush every downstream buffer, drop queued deltas</li><li>The model stops generating; <em>you</em> stop playing. A missed buffer is audible</li></ul></div>
+          <div class="slide"><h4><span class="sn">06</span>Function Calling Over the Wire</h4>
+            <ul><li><code>response.function_call_arguments.done</code> → execute → <code>conversation.item.create</code> (type <code>function_call_output</code>, same <code>call_id</code>) → one <code>response.create</code></li><li><b>The double-reply bug:</b> one turn can contain several calls; trigger <code>response.create</code> per tool and the model speaks once per tool. Submit all outputs, then exactly one <code>response.create</code> on <code>response.done</code></li></ul>
+            <p class="note"><b>Note:</b> tell it as a war story. Deeper lesson: in event protocols, correctness lives in <em>when</em> you send, not just what.</p></div>
+          <div class="slide"><h4><span class="sn">07</span>Scripted Speech: <code>force_message</code></h4>
+            <ul><li>Exact-wording lines (legal disclosures, verification prompts): straight TTS, no model involvement, optionally uninterruptible</li><li>Pattern: the model speaks the empathy; <code>force_message</code> speaks the compliance</li><li>A force_message <em>is</em> the turn — don't follow it with <code>response.create</code></li></ul></div>
+          <div class="slide"><h4><span class="sn">08</span>Part 2: Everything Fails Mid-Sentence</h4>
+            <ul><li>Taxonomy: model stalls · WS drops · client side drops · your own loop blocks</li><li>The caller hears silence for all of them — “uptime is measured per-sentence”</li></ul></div>
+          <div class="slide"><h4><span class="sn">09</span>Watchdogs</h4>
+            <ul><li>Track last-event timestamps; a background task checks recency against context-aware thresholds</li><li>“User finished N s ago, no response yet” ≠ “no events for M s” — different conditions, different reactions</li><li>False-positive trap: silence during your own playback is normal — the watchdog needs the turn-taking state machine</li><li>Escalate: verbal nudge → reconnect → graceful goodbye. Never just go silent</li></ul></div>
+          <div class="slide"><h4><span class="sn">10</span>Reconnection Without Amnesia</h4>
+            <ul><li>Dropped model WS ≠ dropped call: reconnect with backoff while buffering caller audio</li><li>xAI session resumption: enable it, capture <code>conversation.id</code>, reconnect with <code>?conversation_id=…</code> and turns replay</li><li>Cascade owns its history and just resends — a real architectural tradeoff vs native</li></ul></div>
+          <div class="slide"><h4><span class="sn">11</span>Don't Block the Loop</h4>
+            <ul><li>One 200 ms synchronous call stutters <em>every</em> concurrent call on the loop</li><li>Await everything; CPU work in C-extensions/executors; pace outbound audio from a buffer (smooth playback + instant flush)</li><li>Log every event with timestamps — you can't debug what you didn't capture</li></ul></div>
+          <div class="slide"><h4><span class="sn">12</span>Milestone 5: Survivor</h4>
+            <ul><li>Swap the cascade for a Voice Agent session; keep the week-4 tool working over the wire protocol</li><li>Barge-in works (TA will interrupt); watchdog survives a simulated mid-call WS kill — recover or say goodbye, never dead air</li></ul>
+            <p class="note"><b>Note:</b> provide a <code>chaos.py</code> that randomly closes their model WebSocket. Watching your own agent survive a chaos test is the best moment of the course.</p></div>
+          <div class="slide"><h4><span class="sn">13</span>Homework</h4>
+            <ul><li>“Watchdog fires mid-sentence on a healthy call — what state was it missing?”</li><li>“Compare cascade vs native recovery of conversation memory after a disconnect”</li><li>Optional: ephemeral client secrets — browser-direct sessions that cut your server out of the audio path</li></ul></div>
+          <dl class="demo"><dt>Live demos</dt><dd>Raw event-type stream of a session · live barge-in · the double-reply bug, reproduced then fixed · chaos test</dd>
+          <dt>Pitfalls to warn</dt><dd>Audio before <code>session.updated</code> · flushing the server buffer but not the browser's · <code>response.create</code> per tool output · watchdog without playback-state awareness</dd></dl>
+        </div>
+      </details>
+    </div>
+  </section>
+
+  <!-- ================= WEEK 6 ================= -->
+  <section>
+    <h2><span class="idx">WK 6</span>Production, the Provider Landscape &amp; Demo Day</h2>
+    <hr class="rule">
+    <div class="week">
+      <div class="week-head">
+        <p class="goal">Real phone lines, the multi-provider landscape (Gemini Live enters here), evaluation, cost, compliance — then 45 minutes of student demos.</p>
+      </div>
+      <div class="week-meta"><span class="tag">Final demos</span><span class="tag">≈45 min lecture + ≈45 min demos</span></div>
+      <details>
+        <summary>Full slide deck (10 slides + demos)</summary>
+        <div class="slides">
+          <div class="slide"><h4><span class="sn">01</span>From Demo to Deployment</h4>
+            <ul><li>“Your agent works on your laptop. Today: what stands between that and a phone number real people call.”</li></ul></div>
+          <div class="slide"><h4><span class="sn">02</span>Putting It on a Real Phone Line</h4>
+            <ul><li>Rent a number → webhook on incoming call → answer + start a bidirectional media stream (base64 µ-law over WS — exactly as promised in week 2)</li><li>Reference bridge: phone → Telnyx → your server ↔ xAI Voice Agent WS; with <code>audio/pcmu</code> it's nearly a pure relay</li><li>Barge-in on the phone: <code>speech_started</code> → provider <code>clear</code>; call control adds transfer, hangup, SMS follow-up</li></ul>
+            <p class="note"><b>Note:</b> the whole bridge is a few hundred lines of Python — and everything browser-based they built maps 1:1 onto it. That was the course design, not luck.</p></div>
+          <div class="slide"><h4><span class="sn">03</span>One Brain, Many Channels</h4>
+            <ul><li>Voice + SMS + email, one conversation across transports; state keyed by <em>person</em>, not channel</li><li>Domain logic in one place; thin channel adapters (week 4's rule, at product scale)</li></ul></div>
+          <div class="slide"><h4><span class="sn">04</span>The Landscape: Gemini Live &amp; OpenAI Realtime</h4>
+            <ul><li>Now that you know xAI's version, the others are a diff, not a new subject</li><li><b>Gemini Live</b>: bidirectional streaming via Google's SDKs; VAD as start/end-of-speech sensitivity + prefix padding + silence duration (week-3 names, Google spelling); built-in context compression; regional endpoints matter</li><li><b>OpenAI Realtime</b>: the protocol your M5 already speaks — ~90% portable by changing the URL</li><li>What actually differentiates: voice quality, tool ecosystems, resumption, price — and <b>concurrent-session quota, the real production ceiling</b></li></ul>
+            <p class="note"><b>Note:</b> teach comparatively — map every Gemini concept back to the xAI feature students used. Side-by-side config snippets if time allows.</p></div>
+          <div class="slide"><h4><span class="sn">05</span>Evaluating a Voice Agent</h4>
+            <ul><li>Task completion, handoff rate, latency percentiles, barge-in frequency, duration</li><li>Transcript sampling + LLM-as-judge rubrics; regression evals with scripted personas on every prompt change — prompts are code, with tests</li><li>The audio layer needs evals too: domain-vocabulary WER, VAD-in-noise</li></ul></div>
+          <div class="slide"><h4><span class="sn">06</span>Cost of a Voice Minute</h4>
+            <ul><li>Stack the meters: telephony + model session time (or STT+LLM+TTS) + infra</li><li>Silence is money — week 3's VAD gating cuts the bill</li><li>In-class estimate for a 5-minute call, both architectures, from live pricing pages</li></ul></div>
+          <div class="slide"><h4><span class="sn">07</span>Compliance &amp; Safety</h4>
+            <ul><li>Recording consent varies by jurisdiction — disclose, always; AI disclosure via scripted delivery</li><li>PII everywhere in transcripts: encrypt, minimize retention, redact logs; quiet hours for outbound</li><li>Emergencies (“I smell gas”) get deterministic escalation that bypasses the LLM entirely</li></ul></div>
+          <div class="slide"><h4><span class="sn">08</span>Scaling (One Slide of Systems Reality)</h4>
+            <ul><li>One non-blocking asyncio process goes surprisingly far; externalize state before adding workers</li><li>Instance-level horizontal scaling sidesteps multi-worker pain; the ceiling is usually provider quota, not CPU</li></ul></div>
+          <div class="slide"><h4><span class="sn">09</span>Where the Field Is Going</h4>
+            <ul><li>Full-duplex models (listening while speaking) · semantic endpointing by default · expressive/custom voices · speech-native reasoning · on-device</li></ul>
+            <p class="note"><b>Note:</b> end where week 1 began — the 200 ms human turn gap. The industry is clawing toward it; your students now know which parts are hard and why.</p></div>
+          <div class="slide"><h4><span class="sn">10</span>Demo Day Format</h4>
+            <ul><li>5 min each: 30-sec pitch → live conversation with one tool call and one barge-in → your worst failure and its fix</li><li>Rubric: works live 40% · turn-taking 20% · tools 20% · failure story 20%</li><li>Audience writes one “I'd steal that” note per demo</li></ul></div>
+          <dl class="demo"><dt>Instructor pitfalls</dt><dd>Cut slides 08–09 before cutting demo time · keep recordings as demo backups · pull pricing live, never bake numbers into the deck</dd></dl>
+        </div>
+      </details>
+    </div>
+  </section>
+
+  <!-- ================= LOGISTICS ================= -->
+  <section>
+    <h2>Grading &amp; Logistics</h2>
+    <hr class="rule">
+    <div class="tbl-scroll">
+      <table>
+        <tr><th>Component</th><th>Weight</th><th>Notes</th></tr>
+        <tr><td>Milestones M1–M5</td><td class="num">40%</td><td>8% each · graded on working behavior, not code style</td></tr>
+        <tr><td>Final demo</td><td class="num">30%</td><td>Live, with tool call + barge-in</td></tr>
+        <tr><td>Final writeup</td><td class="num">15%</td><td>2–3 pages: architecture diagram, two tradeoffs, the failure that taught you most</td></tr>
+        <tr><td>Participation &amp; homework</td><td class="num">15%</td><td>Weekly conceptual questions</td></tr>
+      </table>
+    </div>
+    <div class="callout"><p><b>Prereqs &amp; tools.</b> Python proficiency assumed. Stack: <code>fastapi</code> · <code>websockets</code> · <code>numpy</code> · <code>soxr</code> · <code>webrtcvad</code> · Silero VAD · the <code>openai</code> SDK pointed at <code>https://api.x.ai/v1</code>. One xAI API key per student (console.x.ai, week 1). No telephony account needed; Gemini key optional for week 6.</p></div>
+    <div class="callout"><p><b>AI-assistant policy.</b> Allowed and encouraged — it's a class about them. But every student must be able to explain every line: a random “explain this function” question accompanies each milestone check.</p></div>
+  </section>
+
+  <footer>
+    Course plan · Building Real-Time Voice AI Agents · 6 weeks · xAI-first, provider landscape in week 6 · Full slide-by-slide lesson plans with speaker notes live in the accompanying markdown docs (SYLLABUS.md, week1–6.md).
+  </footer>
+</div>
+
+<script>
+  (function () {
+    var wave = document.getElementById('wave');
+    var h = [6,10,16,26,32,22,14,8,5,7,13,21,30,34,27,18,10,6,4,8,15,24,31,25,17,9,5,6,12,20,28,33,26,16,8,5,7,14,22,29,23,15,9,6,10,18,27,32,24,13,7,5];
+    for (var i = 0; i < h.length; i++) {
+      var s = document.createElement('span');
+      s.style.height = h[i] + 'px';
+      if (h[i] < 9) s.className = 'q';
+      wave.appendChild(s);
+    }
+  })();
+</script>

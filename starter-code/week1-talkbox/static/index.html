@@ -1,0 +1,208 @@
+<!doctype html>
+<!--
+  M1 "Talkbox" — the browser side. PROVIDED: you don't need to edit this file,
+  but you should read the <script> at the bottom — it is the entire "browser
+  path" from Slide 10 in about 100 lines:
+
+      getUserMedia (mic permission)
+        -> MediaRecorder (hold-to-record)
+        -> POST the clip to /answer
+        -> play the audio that comes back
+        -> draw the per-stage latency bar from the X-Timings header
+
+  In week 2 this page is replaced by one that streams audio continuously over
+  a WebSocket. The server-side shape barely changes — that's the point.
+-->
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>M1 — Talkbox</title>
+<style>
+  :root {
+    --bg: #0f1117; --panel: #181b24; --text: #e8eaf0; --dim: #8b90a0;
+    --accent: #e4573d; --stt: #4e9af1; --llm: #b17ce8; --tts: #4ecf8a;
+  }
+  * { box-sizing: border-box; }
+  body {
+    margin: 0; min-height: 100vh; display: flex; flex-direction: column;
+    align-items: center; background: var(--bg); color: var(--text);
+    font: 16px/1.5 system-ui, sans-serif; padding: 2rem 1rem;
+  }
+  h1 { font-size: 1.2rem; font-weight: 600; margin: 0 0 .25rem; }
+  #status { color: var(--dim); min-height: 1.5em; margin-bottom: 1.5rem; }
+
+  /* The button: hold to talk, like a walkie-talkie. */
+  #ptt {
+    width: 9rem; height: 9rem; border-radius: 50%; border: none;
+    background: var(--accent); color: #fff; font: 600 1rem system-ui;
+    cursor: pointer; touch-action: none; user-select: none; -webkit-user-select: none;
+    transition: transform .1s, box-shadow .1s;
+  }
+  #ptt.recording { transform: scale(1.12); box-shadow: 0 0 0 12px rgba(228,87,61,.25); }
+  #ptt:disabled { background: #3a3f4e; cursor: not-allowed; }
+
+  #log { width: 100%; max-width: 40rem; margin-top: 2rem; }
+  .turn { background: var(--panel); border-radius: 10px; padding: .8rem 1rem; margin-bottom: .8rem; }
+  .turn .who { font-size: .75rem; text-transform: uppercase; letter-spacing: .05em; color: var(--dim); }
+  .turn .err { color: #ff7a6b; white-space: pre-wrap; }
+
+  /* Stacked latency bar: your personal Slide 5. */
+  .lat { display: flex; height: 10px; border-radius: 5px; overflow: hidden; margin-top: .6rem; }
+  .lat span { display: block; }
+  .lat .stt { background: var(--stt); } .lat .llm { background: var(--llm); }
+  .lat .tts { background: var(--tts); } .lat .other { background: #555b6e; }
+  .latlabel { font-size: .75rem; color: var(--dim); margin-top: .3rem; }
+  .key { color: var(--dim); font-size: .75rem; margin-top: 1rem; }
+  .key i { display: inline-block; width: .7em; height: .7em; border-radius: 2px; margin: 0 .3em 0 1em; }
+</style>
+</head>
+<body>
+  <h1>M1 — Talkbox</h1>
+  <div id="status">Loading…</div>
+
+  <button id="ptt" disabled>HOLD<br>TO TALK</button>
+  <div class="key">
+    latency: <i style="background:var(--stt)"></i>STT
+    <i style="background:var(--llm)"></i>Grok
+    <i style="background:var(--tts)"></i>TTS
+    <i style="background:#555b6e"></i>network/other
+  </div>
+
+  <div id="log"></div>
+
+<script>
+const $ = (id) => document.getElementById(id);
+const status = (msg) => { $("status").textContent = msg; };
+
+let recorder = null;
+let chunks = [];
+
+// ---------------------------------------------------------------------------
+// 1. Microphone. getUserMedia prompts for permission — this ONLY works on
+//    https:// or on localhost (which is why the README says localhost).
+// ---------------------------------------------------------------------------
+async function init() {
+  let stream;
+  try {
+    stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+  } catch (e) {
+    status("Mic permission denied (or not on localhost/HTTPS): " + e.message);
+    return;
+  }
+
+  // MediaRecorder hands us COMPRESSED audio (usually webm/Opus; Safari: mp4).
+  // Week 2 is when we drop to raw PCM samples — for now, compressed clips are
+  // exactly what the STT endpoint wants anyway.
+  const mimeType = ["audio/webm;codecs=opus", "audio/webm", "audio/mp4"]
+    .find((t) => MediaRecorder.isTypeSupported(t)) || "";
+  recorder = new MediaRecorder(stream, mimeType ? { mimeType } : {});
+  recorder.ondataavailable = (e) => chunks.push(e.data);
+  recorder.onstop = sendClip;
+
+  $("ptt").disabled = false;
+  status("Hold the button, ask a question, release.");
+}
+
+// ---------------------------------------------------------------------------
+// 2. Hold-to-record. pointerdown/up covers mouse + touch; Space works too.
+// ---------------------------------------------------------------------------
+function startRec() {
+  if (!recorder || recorder.state === "recording") return;
+  chunks = [];
+  recorder.start();
+  $("ptt").classList.add("recording");
+  status("Recording… release to send.");
+}
+function stopRec() {
+  if (!recorder || recorder.state !== "recording") return;
+  recorder.stop(); // fires ondataavailable, then onstop -> sendClip()
+  $("ptt").classList.remove("recording");
+}
+$("ptt").addEventListener("pointerdown", (e) => { e.preventDefault(); startRec(); });
+$("ptt").addEventListener("pointerup", stopRec);
+$("ptt").addEventListener("pointerleave", stopRec);
+document.addEventListener("keydown", (e) => { if (e.code === "Space" && !e.repeat) startRec(); });
+document.addEventListener("keyup", (e) => { if (e.code === "Space") stopRec(); });
+
+// ---------------------------------------------------------------------------
+// 3. Ship the clip to the server, play what comes back, show the numbers.
+// ---------------------------------------------------------------------------
+async function sendClip() {
+  const clip = new Blob(chunks, { type: recorder.mimeType || "audio/webm" });
+  if (clip.size < 1000) { status("Clip too short — hold the button while speaking."); return; }
+
+  status("Thinking…");
+  $("ptt").disabled = true;
+  const t0 = performance.now();
+
+  try {
+    // fetch() sets Content-Type from the Blob's type automatically.
+    const res = await fetch("/answer", { method: "POST", body: clip });
+    const roundTrip = Math.round(performance.now() - t0);
+
+    if (!res.ok) {
+      addTurn({ error: await res.text() });
+      return;
+    }
+
+    // The server reports what happened in headers (JSON-encoded strings).
+    const timings = JSON.parse(res.headers.get("X-Timings") || "{}");
+    const transcript = maybeJson(res.headers.get("X-Transcript"));
+    const reply = maybeJson(res.headers.get("X-Reply"));
+
+    const audio = new Audio(URL.createObjectURL(await res.blob()));
+    await audio.play();
+
+    addTurn({ transcript, reply, timings, roundTrip });
+  } catch (e) {
+    addTurn({ error: String(e) });
+  } finally {
+    $("ptt").disabled = false;
+    status("Hold the button, ask a question, release.");
+  }
+}
+
+const maybeJson = (h) => (h ? JSON.parse(h) : null);
+
+// ---------------------------------------------------------------------------
+// 4. Render one conversation turn + its latency bar.
+//    Widths are proportional to time spent: this is Slide 5, measured by YOU.
+// ---------------------------------------------------------------------------
+function addTurn({ transcript, reply, timings = {}, roundTrip, error }) {
+  const div = document.createElement("div");
+  div.className = "turn";
+
+  if (error) {
+    div.innerHTML = `<div class="who">Server error</div><div class="err"></div>`;
+    div.querySelector(".err").textContent = error;
+  } else {
+    const you = transcript ?? "(no transcript — still in echo mode?)";
+    const bot = reply ?? "(echo)";
+    div.innerHTML = `
+      <div class="who">You</div><div></div>
+      <div class="who" style="margin-top:.5rem">Agent</div><div></div>
+      <div class="lat"></div><div class="latlabel"></div>`;
+    const texts = div.querySelectorAll("div:not([class])");
+    texts[0].textContent = you;
+    texts[1].textContent = bot;
+
+    const { stt = 0, llm = 0, tts = 0 } = timings;
+    const other = Math.max(roundTrip - stt - llm - tts, 0);
+    const bar = div.querySelector(".lat");
+    for (const [cls, ms] of [["stt", stt], ["llm", llm], ["tts", tts], ["other", other]]) {
+      const seg = document.createElement("span");
+      seg.className = cls;
+      seg.style.width = (100 * ms / Math.max(roundTrip, 1)) + "%";
+      bar.appendChild(seg);
+    }
+    div.querySelector(".latlabel").textContent =
+      `STT ${stt} ms · Grok ${llm} ms · TTS ${tts} ms · round trip ${roundTrip} ms`;
+  }
+  $("log").prepend(div);
+}
+
+init();
+</script>
+</body>
+</html>
