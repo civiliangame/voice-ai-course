@@ -7,7 +7,7 @@ with per-stage timing headers the browser page knows how to display.
 
 Run it:
 
-    cp .env.example .env    # then fill in your key + model names
+    cp .env.example .env    # then fill in your key, Grok model, TTS voice
     uvicorn server:app --reload --port 8000
 
 Then open http://localhost:8000 — `localhost` is exempt from the browser's
@@ -21,7 +21,6 @@ server stays the same.
 
 from __future__ import annotations
 
-import io  # noqa: F401  (used by the cascade you'll write in answer())
 import json
 import logging
 import os
@@ -29,6 +28,7 @@ import time
 from contextlib import contextmanager
 from dataclasses import dataclass
 
+import requests
 from dotenv import load_dotenv
 from fastapi import FastAPI, Request, Response
 from fastapi.staticfiles import StaticFiles
@@ -45,11 +45,12 @@ app = FastAPI(title="M1 Talkbox")
 # --------------------------------------------------------------------------
 # Provided: xAI client + config helpers.
 #
-# The xAI API is OpenAI-SDK compatible (Slide 13): one base URL, one key,
-# and the same client object does STT, chat, and TTS.
+# CHAT (Grok) is OpenAI-SDK compatible (Slide 13): one base URL, one key.
+# NOTE: xAI's STT and TTS are NOT OpenAI-SDK compatible — they are native
+# xAI REST endpoints (/v1/stt, /v1/tts) you call directly (see answer()).
 #
 # Config is validated LAZILY so that echo mode works with zero setup:
-# you only need a key and model names once you start writing the cascade.
+# you only need a key once you start writing the cascade.
 # --------------------------------------------------------------------------
 
 def require_env(name: str) -> str:
@@ -126,6 +127,11 @@ class AgentReply:
 #
 # A skeleton of steps 1-3 is sketched in comments below. Notes:
 #
+#  * Grok (chat) is the ONLY OpenAI-SDK call. xAI's STT and TTS are native
+#    REST endpoints (/v1/stt, /v1/tts) — the OpenAI `client.audio.*` methods
+#    hit /v1/audio/*, which xAI does not serve (you'll get a 404). Use
+#    `requests` for those two; see solution/server.py for the full reference.
+#
 #  * The three calls run SEQUENTIALLY and BLOCK. That is fine — encouraged,
 #    even — this week (Lecture 1, pitfalls: "resist optimizing"). Weeks 2-4
 #    stream and overlap these stages; week 5 makes blocking the event loop
@@ -150,42 +156,28 @@ async def answer(audio: bytes, mime: str, timer: StageTimer) -> AgentReply:
     # ---- Step 0: the echo (delete once your cascade works) -----------------
     return AgentReply(audio=audio, mime=mime)
 
-    # ---- Steps 1-3: the cascade (uncomment, complete, and go) --------------
+    # ---- Steps 1-3: the cascade (implement STT -> Grok -> TTS) -------------
+    #
+    # Only the Grok (chat) step is OpenAI-SDK compatible. xAI's STT and TTS are
+    # native xAI REST endpoints — call them directly with `requests` (already
+    # imported). Full reference implementation: solution/server.py.
+    #
     # client = xai_client()
     #
     # with timer.stage("stt"):
-    #     transcription = client.audio.transcriptions.create(
-    #         model=require_env("STT_MODEL"),
-    #         # The SDK wants a (filename, fileobj) tuple; the extension helps
-    #         # the endpoint sniff the container format.
-    #         file=(f"clip.{ext_for(mime)}", io.BytesIO(audio)),
-    #     )
-    #     transcript = transcription.text
+    #     # POST https://api.x.ai/v1/stt  (multipart form-data, field "file")
+    #     # -> transcript from resp.json()["text"]
     #
     # with timer.stage("llm"):
-    #     chat = client.chat.completions.create(
-    #         model=require_env("CHAT_MODEL"),
-    #         messages=[
-    #             {"role": "system", "content": SYSTEM_PROMPT},
-    #             {"role": "user", "content": transcript},
-    #         ],
-    #     )
-    #     reply_text = chat.choices[0].message.content
+    #     # client.chat.completions.create(...)  — the OpenAI SDK -> reply_text
     #
     # with timer.stage("tts"):
-    #     speech = client.audio.speech.create(
-    #         model=require_env("TTS_MODEL"),
-    #         voice=require_env("TTS_VOICE"),
-    #         input=reply_text,
-    #     )
-    #     reply_audio = speech.content  # bytes; mp3 by default
+    #     # POST https://api.x.ai/v1/tts  (JSON: text, voice_id, language)
+    #     # -> reply audio bytes (mp3) from resp.content
     #
-    # return AgentReply(
-    #     audio=reply_audio,
-    #     mime="audio/mpeg",
-    #     transcript=transcript,
-    #     reply_text=reply_text,
-    # )
+    # return AgentReply(audio=reply_audio, mime="audio/mpeg",
+    #                   transcript=transcript, reply_text=reply_text)
+    
 
 
 def ext_for(mime: str) -> str:

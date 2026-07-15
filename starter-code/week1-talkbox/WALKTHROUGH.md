@@ -39,14 +39,16 @@ exists and move on; it pays off in Segment C.
 
 - One base URL, one key, one SDK you already know: `OpenAI(base_url=
   "https://api.x.ai/v1", api_key=...)`. There is no "xAI SDK" to learn —
-  that's the whole slide.
-- The same `client` object does all three calls of the homework:
-  `client.audio.transcriptions` (STT), `client.chat.completions` (Grok),
-  `client.audio.speech` (TTS).
-- Model names: open **docs.x.ai's models page live** on the projector and have
-  students copy the current STT/TTS/chat names into their `.env`. Do not read
-  model names off the slide — say explicitly that handouts rot and the docs
-  don't.
+  that's the whole slide. But this applies to **Grok chat only**.
+- **Correction to teach explicitly:** xAI's STT and TTS are NOT OpenAI-SDK
+  compatible. `client.audio.transcriptions`/`client.audio.speech` POST to
+  `/v1/audio/*`, which xAI does not serve — a 404. STT/TTS are native REST
+  endpoints (`POST /v1/stt`, `POST /v1/tts`) called directly with `requests`;
+  only `client.chat.completions` (Grok) uses the SDK. Full reference in
+  `solution/`.
+- Config: open **docs.x.ai live** on the projector. Students need `CHAT_MODEL`
+  (a Grok model name) and `TTS_VOICE` (an xAI voice_id like `eve`) in `.env` —
+  STT needs neither. Do not read these off the slide — handouts rot, docs don't.
 - Wait until everyone gets a printed sentence. A key or billing failure found
   now costs 2 minutes; found Sunday it costs the milestone. This is the
   highest-value 5 minutes of the lecture.

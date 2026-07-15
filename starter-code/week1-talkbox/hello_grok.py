@@ -10,9 +10,10 @@ and nothing about the week-1 homework can block you on account setup.
 """
 
 import os
-
+from dotenv import load_dotenv
 from openai import OpenAI
 
+load_dotenv()
 # The whole xAI quickstart is these three lines (Slide 13):
 client = OpenAI(base_url="https://api.x.ai/v1", api_key=os.environ["XAI_API_KEY"])
 resp = client.chat.completions.create(

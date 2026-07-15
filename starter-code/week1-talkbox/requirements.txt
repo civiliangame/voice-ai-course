@@ -4,3 +4,4 @@ fastapi
 uvicorn[standard]
 openai          # used against the xAI endpoint (base_url=https://api.x.ai/v1)
 python-dotenv   # loads .env so students don't paste keys into code
+requests

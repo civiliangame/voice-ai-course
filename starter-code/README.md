@@ -57,17 +57,25 @@ runs it all. That's all you need for week 1.
 
 ## The one fact to remember about the xAI API
 
-It is **OpenAI-SDK compatible**. One base URL, one key:
+**Grok (chat) is OpenAI-SDK compatible** — one base URL, one key:
 
 ```python
 from openai import OpenAI
 client = OpenAI(base_url="https://api.x.ai/v1", api_key=os.environ["XAI_API_KEY"])
+reply = client.chat.completions.create(model="grok-4", messages=[...])
 ```
 
-The same `client` object does all three calls you need this week:
-speech-to-text (`client.audio.transcriptions`), chat with Grok
-(`client.chat.completions`), and text-to-speech (`client.audio.speech`).
+**But xAI's audio is NOT OpenAI-SDK compatible.** Speech-to-text and
+text-to-speech are native xAI REST endpoints — the OpenAI `client.audio.*`
+methods hit `/v1/audio/*`, which xAI does not serve (you'll get a 404). Call
+them directly with `requests`:
 
-Model names change faster than course materials: **always check the live models
-page at https://docs.x.ai before hardcoding a model name** (Slide 13's speaker
-notes say the same thing).
+- **STT:** `POST https://api.x.ai/v1/stt` — multipart form-data, field `file`;
+  transcript comes back as `resp.json()["text"]`.
+- **TTS:** `POST https://api.x.ai/v1/tts` — JSON `{text, voice_id, language}`;
+  reply is raw audio bytes (mp3 by default) in `resp.content`.
+
+So week 1 uses two clients: the OpenAI SDK for Grok, plain `requests` for
+STT/TTS. Endpoints, voices, and model names change faster than course
+materials: **always check https://docs.x.ai before hardcoding anything**
+(Slide 13's speaker notes say the same thing).
