@@ -12,14 +12,14 @@ agent on the xAI Grok voice stack.
 | [slides.html](slides.html) | Full lecture slide deck (open in a browser; `→`/`←` to navigate, `N` for speaker notes, `T` for dark mode, `Esc` for contents) |
 | [course-overview.html](course-overview.html) | One-page course overview |
 | [week1.md](week1.md) – [week6.md](week6.md) | Detailed lecture notes per week |
-| [starter-code/](starter-code/) | Milestone scaffolds (Week 1: Talkbox — push-to-talk STT → Grok → TTS agent) |
+| [starter-code/](starter-code/) | Milestone scaffolds (Week 1: Talkbox — push-to-talk cascade; Week 2: Dispatcher — tools + worker) |
 
 ## The six milestones
 
 1. **M1 Talkbox** — push-to-talk Grok agent: STT → Grok → TTS
-2. **M2 Plumber** — continuous streaming + a simulated phone line
+2. **M2 Dispatcher** — tool calling: tickets to a flag file; a worker LLM emails them out
 3. **M3 Listener** — VAD-driven, hands-free turn-taking
-4. **M4 Brain** — tool calling, persona, sentence-streamed TTS
+4. **M4 Brain** — richer tool use, persona, sentence-streamed TTS
 5. **M5 Survivor** — native speech-to-speech, barge-in, watchdog
 6. **Demo day** — live conversation with one tool call and one barge-in
 
@@ -30,7 +30,7 @@ app, run with uvicorn. FastAPI is load-bearing for this course, not incidental:
 
 - **Week 1** uses a plain FastAPI HTTP endpoint (`POST /answer`) plus
   `StaticFiles` to serve the hold-to-talk page — the whole server is one file.
-- **Weeks 2–5** graduate to FastAPI's native **WebSocket** support for
+- **Weeks 3–5** graduate to FastAPI's native **WebSocket** support for
   continuous audio streaming — the same shape a real telephony media stream
   arrives in.
 - FastAPI is **async-first**, which is the entire week-5 lesson ("never block

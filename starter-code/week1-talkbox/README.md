@@ -28,8 +28,8 @@ access on plain `http://` for any other host.
 
 `server.py` is a **FastAPI** app: `app = FastAPI()` plus one
 `@app.post("/answer")` route and a `StaticFiles` mount for the page —
-uvicorn is the ASGI server running it. This same app grows a WebSocket
-route in week 2, so the time you spend reading it now pays off all course.
+uvicorn is the ASGI server running it. This same app grows a tool belt in
+week 2 and a WebSocket route later, so reading it now pays off all course.
 
 ## The recommended path (from slide 14)
 

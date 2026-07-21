@@ -5,7 +5,7 @@ This directory holds the build-along project scaffolds, one folder per milestone
 | Week | Folder | Milestone |
 |------|--------|-----------|
 | 1 | `week1-talkbox/` | M1 — push-to-talk Grok cascade |
-| 2 | *(added in week 2)* | M2 — Plumber |
+| 2 | `week2-dispatcher/` | M2 — Dispatcher (tools + worker) |
 | 3 | *(added in week 3)* | M3 — Listener |
 | 4 | *(added in week 4)* | M4 — Brain |
 | 5 | *(added in week 5)* | M5 — Survivor |
@@ -43,7 +43,9 @@ All five milestone servers are **FastAPI** apps started with
 
 - **Week 1:** one HTTP endpoint + `StaticFiles`. You can read the entire server
   in a minute — that's the point.
-- **Weeks 2–5:** the HTTP POST becomes a FastAPI **WebSocket** route
+- **Week 2:** the same HTTP app grows a tool belt, conversation memory, and
+  a second process (the ticket worker) beside it.
+- **Weeks 3–5:** the HTTP POST becomes a FastAPI **WebSocket** route
   (`@app.websocket(...)`) carrying a continuous audio stream, which mirrors
   1:1 how a telephony provider delivers a phone call to your backend.
 - **Why async matters:** FastAPI runs on asyncio. A voice server is many

@@ -15,7 +15,7 @@ HTTPS-only microphone rule, which is why we serve on it (Lecture 1, pitfalls).
 
 Architecture note (Slide 10): browser mic -> HTTP POST -> this process is the
 training-wheels version of: caller -> telephony provider -> WebSocket -> your
-server. Week 2 swaps the POST for a real continuous stream; the shape of the
+server. A later week swaps the POST for a real continuous stream; the shape of the
 server stays the same.
 """
 

@@ -22,11 +22,11 @@ function (§1).
 - Point at the `mimeType` selection: the browser hands us **compressed** audio
   (webm/Opus; Safari gives mp4). Ask the class: "is that OK to send to STT?"
   Answer: only if the docs say so — foreshadows the week's #2 failure mode.
-  Raw PCM samples arrive in week 2; this week compressed clips are fine
+  Raw PCM samples arrive later in the course; this week compressed clips are fine
   *because the STT endpoint accepts container formats*.
 - Draw the correspondence from the slide one more time, now with code on
   screen: browser mic ≈ caller, HTTP POST ≈ provider media stream (we upgrade
-  the POST to a WebSocket in week 2, and nothing else changes shape).
+  the POST to a WebSocket in a later week, and nothing else changes shape).
 
 **Don't** walk through the rendering code (§4) — mention the latency bar
 exists and move on; it pays off in Segment C.
@@ -121,9 +121,9 @@ start — the parts of slide 5's budget that no API dashboard shows you.)
   The moment we remove the button (week 3) turns stop being requests.
 - *"Can I use `async`/`await` on the API calls?"* — Sure, but it buys nothing
   while calls are sequential. Concurrency arrives when there's something to
-  overlap (week 2).
+  overlap (the streaming weeks).
 - *"MediaRecorder gives me chunks — why collect then send, not stream?"* —
-  You've just invented week 2's milestone. Hold that thought.
+  You've just invented the streaming milestone. Hold that thought.
 - *"Why does my first request take an extra second?"* — TLS + connection
   setup to the API; watch the gray bar shrink on turn two. (Connection reuse
   is why the solution builds one client per request but the SDK pools under

@@ -132,7 +132,7 @@
 
 <section><h1>What you'll build</h1><ul>
   <li><b>M1 Talkbox</b> — push-to-talk Grok agent: STT → Grok → TTS, <em>this week</em></li>
-  <li><b>M2 Plumber</b> — continuous streaming + a simulated phone line</li>
+  <li><b>M2 Dispatcher</b> — tools: Grok files real tickets; a worker LLM emails them out</li>
   <li><b>M3 Listener</b> — drop the button: VAD-driven, hands-free turns</li>
   <li><b>M4 Brain</b> — a real tool, a persona, sentence-streamed TTS</li>
   <li><b>M5 Survivor</b> — native speech-to-speech, barge-in, watchdog</li>
@@ -231,12 +231,23 @@
 </div>
 
 <!-- ============ WEEK 2 ============ -->
-<div class="wk" data-n="2" data-t="Audio for Engineers Who Skipped DSP" data-m="M2 · PLUMBER">
-<section class="divider"><div class="wknum">WEEK 02</div><h1>Audio for Engineers Who Skipped DSP</h1><div class="mile">MILESTONE M2 · PLUMBER — the full audio pipeline</div></section>
+<div class="wk" data-n="2" data-t="Giving the Agent Hands: Tool Calling with Grok" data-m="M2 · DISPATCHER">
+<section class="divider"><div class="wknum">WEEK 02</div><h1>Giving the Agent Hands: Tool Calling with Grok</h1><div class="mile">MILESTONE M2 · DISPATCHER — tools, a flag file &amp; a worker</div></section>
+
+<section><h1>Last week it talked. Today it acts.</h1>
+  <p class="quote">Ask week-1 Talkbox to "file a maintenance ticket" and it says: "Done!" — and nothing, anywhere, happened.</p>
+  <aside>Open by replaying that failure LIVE on last week's Talkbox: ask it to file a ticket for the broken heater and let the class hear it lie. The model hallucinates ACTIONS, not just facts. By end of class, the same sentence produces a ticket file you can cat and an email you can open.</aside></section>
+
+<section><h1>Two parts today</h1><ul>
+  <li><b>Part 1 (~15 min):</b> audio crash course — flip-through for vocabulary: PCM, 8 kHz, µ-law, frames, resampling, jitter</li>
+  <li class="sub">Full detail stays in the notes + starter code — come back when audio breaks</li>
+  <li><b>Part 2 (the meat):</b> tool calling with Grok — what a tool is, why you need it, the loop, and the flag-file worker pattern</li>
+  <li>Milestone: <b>M2 "Dispatcher"</b> — your agent files real tickets; a second LLM emails the on-call plumber</li></ul>
+  <aside>Set the pace expectation explicitly: the next ten slides go at ~90 seconds each. Keep ONE audio demo (the 44.1 kHz vs 8 kHz listen) and drop the rest.</aside></section>
 
 <section><h1>Sound becomes numbers, numbers become bugs</h1>
   <p class="quote">After today, int16, 8000 Hz, and µ-law will never scare you again.</p>
-  <aside>Everything is a numpy array. The least glamorous, most load-bearing week — every later "sounds weird" bug traces back here.</aside></section>
+  <aside>FLIP-THROUGH PACE from here to "the best pipeline is no pipeline". Everything is a numpy array; the goal today is vocabulary, not mastery — every later "sounds weird" bug traces back to these ten slides, and they'll be here waiting.</aside></section>
 
 <section><h1>Sampling &amp; quantization</h1><ul>
   <li>Rates in the wild: <b>8 k</b> phone · <b>16 k</b> speech models · <b>24 k</b> TTS · 44.1 k music</li>
@@ -303,7 +314,7 @@
   <li>In: base64 → µ-law decode → PCM 8 k → resample 16 k → clean → VAD → model</li>
   <li>Out: model 24 k → 8 k → µ-law encode → base64 → JSON</li>
   <li>Every arrow: a place to log, buffer, and get bytes wrong</li>
-  <li><b>This diagram is the M2 spec</b></li></ul></section>
+  <li><b>Keep this diagram — it's your debugging map for the whole course</b></li></ul></section>
 
 <section><h1>The best pipeline is no pipeline</h1><ul>
   <li>The xAI Voice Agent API accepts <code>audio/pcmu</code> — µ-law 8 kHz, directly</li>
@@ -312,18 +323,84 @@
   <li>Principle: negotiate one format end-to-end &gt; converting in the middle</li></ul>
   <aside>Real production pattern: a Telnyx↔xAI bridge where both sides speak µ-law is nearly a pure relay. Only possible because someone knew enough codecs to configure both ends.</aside></section>
 
-<section><h1>Milestone 2: Plumber</h1><ul>
-  <li>Upgrade Talkbox: clip-upload → <b>continuous streaming</b> over a WebSocket (button now gates the stream)</li>
-  <li>Route mic audio through a <b>simulated phone line</b> before STT: → int16 → 8 kHz µ-law → back up</li>
-  <li>Buffered playout for the TTS response — 20 ms framing, no clicks</li>
-  <li>Done = still answers questions, <em>and</em> you report STT accuracy with vs without the phone line</li></ul>
-  <aside>The accuracy comparison makes the codec lesson concrete: students SEE the transcript degrade through the phone line — exactly what production phone agents live with. Diagnosis chart: screech = scaling/endianness · rhythmic clicks = chunk-boundary resampling.</aside></section>
+<section><h1>Part 2 · Your agent is all talk</h1><ul>
+  <li>Talkbox discusses the broken heater with warmth and expertise — and does <b>nothing</b> about it</li>
+  <li>An LLM emits text. <b>That is the complete list of its abilities</b></li>
+  <li>Worse: ask it to act and it <em>claims it did</em> — hallucinated actions</li>
+  <li><b>Tools</b>: the contract that lets the model <em>request</em> actions your code performs</li></ul>
+  <aside>The 2am tenant doesn't want sympathy; they want a work order to EXIST when they hang up. This slide is the why; everything after is how.</aside></section>
+
+<section><h1>What a tool actually is</h1><ul>
+  <li>Three parts: a <b>Python function</b> you wrote · a <b>JSON description</b> the model reads · <b>glue</b> connecting them</li>
+  <li>The model <b>never executes anything</b> — it emits "please call <code>file_maintenance_ticket</code> with these args"</li>
+  <li>You run it, append the result, the model continues</li>
+  <li>Mental model: a brain in a jar; tools are nerves <em>you</em> solder on</li></ul>
+  <aside>Kills the #1 misconception (that the model runs code). Security for free: a tool call is a REQUEST from an untrusted narrator; your code has the hands, so your code validates. "Initializing" a tool = write the function, write its schema, register both. No magic.</aside></section>
+
+<section><h1>Declaring a tool: the schema</h1><ul>
+  <li>Same call as week 1, plus <code>tools=[...]</code></li>
+  <li>Each entry: <code>name</code> · <code>description</code> · <code>parameters</code> (JSON Schema)</li>
+  <li><b>Descriptions are prompts</b> — the model picks tools by reading them</li>
+  <li>Constrain what you can: <code>"enum": ["emergency","urgent","routine"]</code> beats free text</li></ul>
+  <aside>Show the real scaffold schema line by line. `required` fields make the model ASK the caller for a missing unit number instead of inventing one — exactly the phone behavior you want. Live A/B: replace the description with a vague one and watch tool use degrade.</aside></section>
+
+<section><h1>The tool-call loop</h1><ul>
+  <li>Round 1: <code>finish_reason: "tool_calls"</code> instead of text — and <code>arguments</code> is a JSON <b>string</b></li>
+  <li>You: run each call → append the assistant tool-call msg <b>and</b> a <code>role:"tool"</code> result (matched by <code>tool_call_id</code>)</li>
+  <li>Round 2: model reads results, finally speaks</li>
+  <li>It's a <b>loop</b>, not an if — the model may chain tools. Cap the rounds</li></ul>
+  <aside>Whiteboard the message list growing: [system, user] → +assistant(tool_calls) → +tool(result) → +assistant(text). The two bugs everyone hits: forgetting to append the assistant tool-call message (API rejects the history), and skipping json.loads on arguments. Demo the 400 live — they'll recognize it Sunday.</aside></section>
+
+<section><h1>Tools force memory</h1><ul>
+  <li>Week-1 Talkbox was stateless — every question a blank slate</li>
+  <li>The loop is a conversation <em>within</em> a turn; follow-ups need history <em>across</em> turns</li>
+  <li>Keep a running <code>messages</code> list; append each user + final assistant turn</li>
+  <li>"What's the status of my ticket?" — needs memory, or a lookup tool. <b>Do both</b></li></ul>
+  <aside>In-RAM history is fine for the course (one user per server). Production shape without building it: per-call persisted state, because calls drop and people call back — week 6. The status tool is their first READ tool next to the WRITE tool: tools aren't only side effects.</aside></section>
+
+<section><h1>Voice + tools = latency discipline</h1><ul>
+  <li>Each tool round trip adds a full extra LLM call — your brain stage <b>doubles</b></li>
+  <li>While your tool runs, the caller hears <b>silence</b></li>
+  <li>Rule for the voice path: a tool returns in <b>&lt; ~100 ms</b></li>
+  <li>Slow or risky work — email, CRM writes, payments — <em>never</em> runs inside the tool</li></ul>
+  <aside>Show it on the scaffold's latency bar: no-tool question, then a ticket-filing question — the Grok segment doubles. The tool's job is to record intent durably and RETURN. Foreshadow week 4: filler phrases ("one moment, let me file that…") buy time the same way.</aside></section>
+
+<section><h1>The flag-file pattern</h1><ul>
+  <li><code>file_maintenance_ticket</code> appends <b>one JSON line</b> to <code>tickets/inbox.jsonl</code>, returns the id — microseconds, durable</li>
+  <li>A separate process — <code>worker.py</code> — polls the file for tickets it hasn't seen</li>
+  <li>The worker drafts the email with <b>its own Grok call</b> → outbox</li>
+  <li>You just built a job queue out of a text file. Production = Redis/SQS + SMTP, <b>same shape</b></li></ul>
+  <aside>Two failure-isolation wins: worker crashes → call unaffected, ticket still in the file; call drops → ticket already survived. The processed.txt ledger = at-least-once delivery + idempotency, taught with two text files and tail -f.</aside></section>
+
+<section><h1>Two brains: the worker gets its own LLM</h1><ul>
+  <li>Voice Grok is prompted to <b>converse</b>: short spoken sentences</li>
+  <li>Worker Grok is prompted to <b>produce an artifact</b>: a formal work-order email — no latency pressure, no length pressure</li>
+  <li>Different prompts, different jobs; the ticket file is the <b>contract</b> between them</li>
+  <li>One-shot LLM-as-function: JSON in → email out. No conversation, no history</li></ul>
+  <aside>Their first multi-LLM system. Plant the framing: an LLM call is just another kind of function — use one anywhere a fuzzy transformation is needed. The worker can run a smaller, cheaper model since nobody's waiting: a real production cost lever.</aside></section>
+
+<section><h1>Tool design rules for voice</h1><ul>
+  <li>Few tools, sharp descriptions — 3 good &gt; 12 vague (tool <em>choice</em> is a skill you can sabotage)</li>
+  <li><b>Validate every argument</b> — the model <em>will</em> invent a unit number unless schema + prompt forbid it</li>
+  <li>Return terse, speakable JSON: <code>{"ticket_id":"T-1042","status":"filed"}</code></li>
+  <li>Return <b>errors as strings too</b> — the model reads <code>{"error":…}</code> and asks the caller to clarify</li>
+  <li>Log every call + args: your transcript of <em>actions</em> (and your audit trail)</li></ul>
+  <aside>The error-as-string trick deserves 60 seconds: raising kills the turn; returning {"error":...} turns failure into conversational repair ("I don't see a unit 9C — can you double-check?"). In regulated verticals the action log is what compliance actually asks for.</aside></section>
+
+<section><h1>Milestone 2: Dispatcher</h1><ul>
+  <li>Scaffold = Talkbox with the cascade <b>already implemented</b> + memory + an empty tool belt + a worker skeleton</li>
+  <li>You write: two schemas · two tool functions (file → <code>inbox.jsonl</code>; status ← read it) · the loop · the worker's Grok draft</li>
+  <li>Done = "heater broken, unit 4B" → spoken ticket id → email in <code>outbox/</code> in seconds → status question answered</li>
+  <li>Stretch: real SMTP · conditional routing (emergency now, routine digest) · a third tool</li></ul>
+  <aside>The scaffold talks out of the box (step 0) and the worker runs keyless in TEMPLATE mode until they upgrade draft_email() to Grok — echo-first philosophy again. Demo with three terminals: server · worker · tail -f on inbox + outbox.</aside></section>
 
 <section><h1>Homework</h1><ul>
-  <li>"Outbound audio clicks every 20 ms — likely cause and fix?"</li>
-  <li>"Playout buffer at 0 ms? At 500 ms? What happens, and why?"</li>
-  <li>Deliverable: one sentence transcribed clean vs through your phone line — both transcripts</li>
-  <li>Optional: the G.711 Wikipedia page (short, genuinely good)</li></ul></section>
+  <li>M2 "Dispatcher" due before week 3</li>
+  <li>Deliverable: transcript + ticket line + generated email, for one <b>urgent</b> and one <b>routine</b> request</li>
+  <li>"Why must the tool return <em>before</em> the email is drafted? Trace what the caller hears if it didn't."</li>
+  <li>"Your agent filed the same ticket twice in one call — schema, prompt, or function?"</li>
+  <li>Reading: xAI function-calling docs (docs.x.ai)</li></ul>
+  <aside>The "return before drafting" answers preview week 4's filler-phrase material — keep the good ones. Warn about the top pitfalls once more: append order in the loop, json.loads on arguments, capping the loop, and the worker tracking processed ids.</aside></section>
 </div>
 
 <!-- ============ WEEK 3 ============ -->

@@ -1,23 +1,20 @@
 <!doctype html>
 <!--
-  M1 "Talkbox" — the browser side. PROVIDED: you don't need to edit this file,
-  but you should read the <script> at the bottom — it is the entire "browser
-  path" from Slide 10 in about 100 lines:
+  M2 "Dispatcher" — the browser side. PROVIDED, and almost identical to week 1
+  (that's deliberate: this week is a server-side week). Two additions:
 
-      getUserMedia (mic permission)
-        -> MediaRecorder (hold-to-record)
-        -> POST the clip to /answer
-        -> play the audio that comes back
-        -> draw the per-stage latency bar from the X-Timings header
+    * each turn shows CHIPS for the tools the model called (X-Tools header) —
+      when your agent files a ticket, you SEE the tool fire
+    * a "new call" button that clears the server's conversation memory
 
-  Later in the course this page is replaced by one that streams audio
-  continuously over a WebSocket. The server-side shape barely changes — that's the point.
+  Watch the latency bar when a tool fires: the Grok segment roughly doubles,
+  because a tool call costs a second model round trip (Lecture 2, Slide 20).
 -->
 <html lang="en">
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>M1 — Talkbox</title>
+<title>M2 — Dispatcher</title>
 <style>
   :root {
     --bg: #0f1117; --panel: #181b24; --text: #e8eaf0; --dim: #8b90a0;
@@ -32,7 +29,6 @@
   h1 { font-size: 1.2rem; font-weight: 600; margin: 0 0 .25rem; }
   #status { color: var(--dim); min-height: 1.5em; margin-bottom: 1.5rem; }
 
-  /* The button: hold to talk, like a walkie-talkie. */
   #ptt {
     width: 9rem; height: 9rem; border-radius: 50%; border: none;
     background: var(--accent); color: #fff; font: 600 1rem system-ui;
@@ -42,12 +38,26 @@
   #ptt.recording { transform: scale(1.12); box-shadow: 0 0 0 12px rgba(228,87,61,.25); }
   #ptt:disabled { background: #3a3f4e; cursor: not-allowed; }
 
+  #reset {
+    margin-top: 1rem; background: none; border: 1px solid #3a3f4e; color: var(--dim);
+    border-radius: 8px; padding: .35rem .9rem; font: 500 .85rem system-ui; cursor: pointer;
+  }
+  #reset:hover { color: var(--text); border-color: var(--dim); }
+
   #log { width: 100%; max-width: 40rem; margin-top: 2rem; }
   .turn { background: var(--panel); border-radius: 10px; padding: .8rem 1rem; margin-bottom: .8rem; }
   .turn .who { font-size: .75rem; text-transform: uppercase; letter-spacing: .05em; color: var(--dim); }
   .turn .err { color: #ff7a6b; white-space: pre-wrap; }
 
-  /* Stacked latency bar: your personal Slide 5. */
+  /* tool chips: proof the model reached for a tool this turn */
+  .tools { margin-top: .6rem; }
+  .tools span {
+    display: inline-block; font: 500 .75rem ui-monospace, monospace;
+    background: rgba(78,207,138,.12); color: var(--tts);
+    border: 1px solid rgba(78,207,138,.4); border-radius: 999px;
+    padding: .15rem .6rem; margin-right: .4rem;
+  }
+
   .lat { display: flex; height: 10px; border-radius: 5px; overflow: hidden; margin-top: .6rem; }
   .lat span { display: block; }
   .lat .stt { background: var(--stt); } .lat .llm { background: var(--llm); }
@@ -58,13 +68,14 @@
 </style>
 </head>
 <body>
-  <h1>M1 — Talkbox</h1>
+  <h1>M2 — Dispatcher</h1>
   <div id="status">Loading…</div>
 
   <button id="ptt" disabled>HOLD<br>TO TALK</button>
+  <button id="reset" title="Clear the server's conversation memory">✕ new call</button>
   <div class="key">
     latency: <i style="background:var(--stt)"></i>STT
-    <i style="background:var(--llm)"></i>Grok
+    <i style="background:var(--llm)"></i>Grok (incl. tools)
     <i style="background:var(--tts)"></i>TTS
     <i style="background:#555b6e"></i>network/other
   </div>
@@ -78,10 +89,7 @@ const status = (msg) => { $("status").textContent = msg; };
 let recorder = null;
 let chunks = [];
 
-// ---------------------------------------------------------------------------
-// 1. Microphone. getUserMedia prompts for permission — this ONLY works on
-//    https:// or on localhost (which is why the README says localhost).
-// ---------------------------------------------------------------------------
+// Mic + MediaRecorder — unchanged from week 1 (localhost/HTTPS only).
 async function init() {
   let stream;
   try {
@@ -90,10 +98,6 @@ async function init() {
     status("Mic permission denied (or not on localhost/HTTPS): " + e.message);
     return;
   }
-
-  // MediaRecorder hands us COMPRESSED audio (usually webm/Opus; Safari: mp4).
-  // A later week drops to raw PCM samples — for now, compressed clips are
-  // exactly what the STT endpoint wants anyway.
   const mimeType = ["audio/webm;codecs=opus", "audio/webm", "audio/mp4"]
     .find((t) => MediaRecorder.isTypeSupported(t)) || "";
   recorder = new MediaRecorder(stream, mimeType ? { mimeType } : {});
@@ -101,12 +105,9 @@ async function init() {
   recorder.onstop = sendClip;
 
   $("ptt").disabled = false;
-  status("Hold the button, ask a question, release.");
+  status("Hold the button and report a problem — try a broken heater.");
 }
 
-// ---------------------------------------------------------------------------
-// 2. Hold-to-record. pointerdown/up covers mouse + touch; Space works too.
-// ---------------------------------------------------------------------------
 function startRec() {
   if (!recorder || recorder.state === "recording") return;
   chunks = [];
@@ -116,7 +117,7 @@ function startRec() {
 }
 function stopRec() {
   if (!recorder || recorder.state !== "recording") return;
-  recorder.stop(); // fires ondataavailable, then onstop -> sendClip()
+  recorder.stop();
   $("ptt").classList.remove("recording");
 }
 $("ptt").addEventListener("pointerdown", (e) => { e.preventDefault(); startRec(); });
@@ -125,9 +126,13 @@ $("ptt").addEventListener("pointerleave", stopRec);
 document.addEventListener("keydown", (e) => { if (e.code === "Space" && !e.repeat) startRec(); });
 document.addEventListener("keyup", (e) => { if (e.code === "Space") stopRec(); });
 
-// ---------------------------------------------------------------------------
-// 3. Ship the clip to the server, play what comes back, show the numbers.
-// ---------------------------------------------------------------------------
+// NEW this week: wipe the server-side conversation memory (Slide 19).
+$("reset").addEventListener("click", async () => {
+  await fetch("/reset", { method: "POST" });
+  $("log").innerHTML = "";
+  status("New call — memory cleared.");
+});
+
 async function sendClip() {
   const clip = new Blob(chunks, { type: recorder.mimeType || "audio/webm" });
   if (clip.size < 1000) { status("Clip too short — hold the button while speaking."); return; }
@@ -137,7 +142,6 @@ async function sendClip() {
   const t0 = performance.now();
 
   try {
-    // fetch() sets Content-Type from the Blob's type automatically.
     const res = await fetch("/answer", { method: "POST", body: clip });
     const roundTrip = Math.round(performance.now() - t0);
 
@@ -146,30 +150,26 @@ async function sendClip() {
       return;
     }
 
-    // The server reports what happened in headers (JSON-encoded strings).
     const timings = JSON.parse(res.headers.get("X-Timings") || "{}");
+    const tools = JSON.parse(res.headers.get("X-Tools") || "[]");
     const transcript = maybeJson(res.headers.get("X-Transcript"));
     const reply = maybeJson(res.headers.get("X-Reply"));
 
     const audio = new Audio(URL.createObjectURL(await res.blob()));
     await audio.play();
 
-    addTurn({ transcript, reply, timings, roundTrip });
+    addTurn({ transcript, reply, tools, timings, roundTrip });
   } catch (e) {
     addTurn({ error: String(e) });
   } finally {
     $("ptt").disabled = false;
-    status("Hold the button, ask a question, release.");
+    status("Hold the button to keep talking.");
   }
 }
 
 const maybeJson = (h) => (h ? JSON.parse(h) : null);
 
-// ---------------------------------------------------------------------------
-// 4. Render one conversation turn + its latency bar.
-//    Widths are proportional to time spent: this is Slide 5, measured by YOU.
-// ---------------------------------------------------------------------------
-function addTurn({ transcript, reply, timings = {}, roundTrip, error }) {
+function addTurn({ transcript, reply, tools = [], timings = {}, roundTrip, error }) {
   const div = document.createElement("div");
   div.className = "turn";
 
@@ -177,15 +177,23 @@ function addTurn({ transcript, reply, timings = {}, roundTrip, error }) {
     div.innerHTML = `<div class="who">Server error</div><div class="err"></div>`;
     div.querySelector(".err").textContent = error;
   } else {
-    const you = transcript ?? "(no transcript — still in echo mode?)";
-    const bot = reply ?? "(echo)";
     div.innerHTML = `
       <div class="who">You</div><div></div>
       <div class="who" style="margin-top:.5rem">Agent</div><div></div>
+      <div class="tools"></div>
       <div class="lat"></div><div class="latlabel"></div>`;
     const texts = div.querySelectorAll("div:not([class])");
-    texts[0].textContent = you;
-    texts[1].textContent = bot;
+    texts[0].textContent = transcript ?? "(no transcript)";
+    texts[1].textContent = reply ?? "";
+
+    // Tool chips: one per call the model made this turn.
+    const toolsEl = div.querySelector(".tools");
+    for (const t of tools) {
+      const chip = document.createElement("span");
+      chip.textContent = "🔧 " + t;
+      toolsEl.appendChild(chip);
+    }
+    if (!tools.length) toolsEl.remove();
 
     const { stt = 0, llm = 0, tts = 0 } = timings;
     const other = Math.max(roundTrip - stt - llm - tts, 0);

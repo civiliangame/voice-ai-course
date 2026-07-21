@@ -15,7 +15,7 @@ Students leave understanding the two dominant voice-agent architectures (cascade
 **Speaker notes**: Open with a live 30-second demo of the *finished* project (or a production agent if you can show one safely). Let them hear a natural back-and-forth including an interruption. Then say: "Everything you just heard is a lie held together by buffering. Let's take it apart."
 
 ### Slide 2 — What You'll Build
-- The milestone ladder: Talkbox → Plumber → Listener → Brain → Survivor → Demo Day
+- The milestone ladder: Talkbox → Dispatcher → Listener → Brain → Survivor → Demo Day
 - **This week's homework: your agent already talks** — mic clip → xAI STT → Grok → xAI TTS → spoken answer
 - Each later week upgrades that same agent: real streaming, hands-free turns, tools, native speech-to-speech
 - "Graded on behavior, not style: if the TA can talk to it, you pass"

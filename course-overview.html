@@ -161,9 +161,9 @@
     <p>Students build a browser-based voice agent in Python that <b>talks — via Grok — from week 1</b> and gains a new capability every week. Browser mic ≈ caller, WebSocket ≈ telephony media stream — everything maps 1:1 onto a real phone deployment (an optional stretch goal connects a real Telnyx/Twilio number via a provided reference bridge).</p>
     <div class="ladder">
       <div class="rung"><div class="m">WK 1 · M1</div><h3>Talkbox</h3><p>Push-to-talk Grok agent: mic clip → xAI STT → Grok → xAI TTS → spoken answer.</p></div>
-      <div class="rung"><div class="m">WK 2 · M2</div><h3>Plumber</h3><p>Real-time plumbing: continuous streaming, resampling, µ-law round-trip (simulated phone line), buffered playout.</p></div>
+      <div class="rung"><div class="m">WK 2 · M2</div><h3>Dispatcher</h3><p>Tool calling: Grok files maintenance tickets into a flag file; a second LLM worker turns them into emails.</p></div>
       <div class="rung"><div class="m">WK 3 · M3</div><h3>Listener</h3><p>Drop the button: VAD detects turns automatically — a hands-free conversation.</p></div>
-      <div class="rung"><div class="m">WK 4 · M4</div><h3>Brain</h3><p>Function calling with one real tool, a persona, and sentence-streamed TTS.</p></div>
+      <div class="rung"><div class="m">WK 4 · M4</div><h3>Brain</h3><p>Richer tool use, a persona, and sentence-streamed TTS.</p></div>
       <div class="rung"><div class="m">WK 5 · M5</div><h3>Survivor</h3><p>Native speech-to-speech (Grok Voice Agent API) with barge-in, watchdog, reconnection.</p></div>
       <div class="rung"><div class="m">WK 6</div><h3>Demo Day</h3><p>Polish, a personality, and a 5-minute live demo — tool call and barge-in required.</p></div>
     </div>
@@ -230,49 +230,51 @@
 
   <!-- ================= WEEK 2 ================= -->
   <section>
-    <h2><span class="idx">WK 2</span>Audio for Engineers Who Skipped DSP</h2>
+    <h2><span class="idx">WK 2</span>Giving the Agent Hands: Tool Calling with Grok</h2>
     <hr class="rule">
     <div class="week">
       <div class="week-head">
-        <p class="goal">PCM, sample rates, µ-law, framing, resampling, playout buffers. The least glamorous, most load-bearing week — every later “sounds weird” bug traces back here.</p>
+        <p class="goal">The meat: what a tool is, declaring one with JSON schema, the tool-call loop, and designing tools for voice latency — a flag-file tool plus a second LLM worker that turns tickets into emails. Opens with a ~15-minute flip-through audio crash course (PCM, µ-law, frames, resampling) for vocabulary; every later “sounds weird” bug traces back to those slides.</p>
       </div>
-      <div class="week-meta"><span class="tag">M2 Plumber</span><span class="tag">75–90 min</span></div>
+      <div class="week-meta"><span class="tag">M2 Dispatcher</span><span class="tag">75–90 min</span><span class="tag">Part 1: audio flip · Part 2: tools</span></div>
       <details>
-        <summary>Full slide deck (14 slides)</summary>
+        <summary>Full slide deck (25 slides)</summary>
         <div class="slides">
-          <div class="slide"><h4><span class="sn">01</span>Sound Becomes Numbers, Numbers Become Bugs</h4>
-            <p class="note"><b>Note:</b> promise: after today, <code>int16</code>, 8000 Hz, and µ-law never scare them again. It's all numpy arrays.</p></div>
-          <div class="slide"><h4><span class="sn">02</span>Sampling &amp; Quantization</h4>
-            <ul><li>Rates in the wild: 8 k phone · 16 k speech models · 24 k TTS · 44.1 k music</li><li>Nyquist in one line; int16 PCM as the lingua franca</li><li>1 second of phone audio = 16 KB</li></ul></div>
-          <div class="slide"><h4><span class="sn">03</span>Why Phones Sound Like Phones: 8 kHz &amp; G.711</h4>
-            <ul><li>The 1970s standard is still the floor; ~4 kHz ceiling — bad for “s” vs “f”</li><li>Models want 16 k+ → upsample everything off a phone line</li></ul>
-            <p class="note"><b>Note:</b> play the same sentence at 44.1 k then 8 k — the class <em>hears</em> the week's motivation.</p></div>
-          <div class="slide"><h4><span class="sn">04</span>µ-law: 1972 Compression You Still Must Handle</h4>
-            <ul><li>16-bit linear → 8-bit logarithmic (hearing is log — spend precision on quiet)</li><li>First op on inbound phone audio: base64-decode, then µ-law-decode. Wrong order = loud static</li></ul></div>
-          <div class="slide"><h4><span class="sn">05</span>Frames: Audio Arrives in 20 ms Pieces</h4>
-            <ul><li>160 samples @ 8 kHz, steady 50/sec cadence; VADs require exact 10/20/30 ms frames</li><li>Real-time audio is a metronome, not a firehose</li></ul></div>
-          <div class="slide"><h4><span class="sn">06</span>Resampling: 8 k ↔ 16 k ↔ 24 k</h4>
-            <ul><li>The rate zoo in one call; naive drop/duplicate aliases and sounds metallic</li><li>Use a real streaming resampler (e.g. soxr); persist state across chunks or get periodic clicks</li></ul>
-            <p class="note"><b>Note:</b> say the chunk-boundary gotcha twice — it will be half of the M2 bugs.</p></div>
-          <div class="slide"><h4><span class="sn">07</span>Bytes, Endianness, and the Bugs You'll Meet</h4>
-            <ul><li>int16-LE vs float32 [−1,1]: browsers/ML use float, telephony uses int — convert deliberately</li><li>Debug ritual: write the buffer to .wav and <em>look</em> at it in Audacity</li></ul></div>
-          <div class="slide"><h4><span class="sn">08</span>Anatomy of a Media-Stream Message</h4>
-            <ul><li><code>{"event":"media","media":{"payload":"&lt;base64 µ-law&gt;"}}</code> plus start/stop/mark/clear</li><li>Our browser project mirrors this format on purpose</li></ul></div>
-          <div class="slide"><h4><span class="sn">09</span>Jitter and the Playout Buffer</h4>
-            <ul><li>Networks deliver unevenly; speakers need perfect evenness → buffer 40–100 ms</li><li>The course's central tradeoff appears: latency vs. robustness</li></ul></div>
-          <div class="slide"><h4><span class="sn">10</span>Cleaning the Signal: AEC · NS · AGC</h4>
-            <ul><li>Echo cancellation (critical for barge-in), noise suppression (neural ≫ classical on non-stationary noise), gain control</li><li>Off-the-shelf pipeline stage (WebRTC APM); order matters: AEC → NS → VAD</li></ul></div>
-          <div class="slide"><h4><span class="sn">11</span>The Full Pipeline, Assembled</h4>
-            <ul><li>In: base64 → µ-law decode → PCM 8 k → resample 16 k → clean → VAD → model</li><li>Out: model 24 k → 8 k → µ-law → base64 → JSON</li><li>Every arrow is a place to log, buffer, and get bytes wrong — this diagram is the M2 spec</li></ul></div>
-          <div class="slide"><h4><span class="sn">12</span>The Best Pipeline Is No Pipeline</h4>
-            <ul><li>The xAI Voice Agent API accepts <code>audio/pcmu</code> (µ-law 8 kHz) directly</li><li>A phone↔Grok bridge can relay base64 µ-law both ways: <b>zero transcoding</b></li><li>We build the pipeline anyway: browsers don't speak µ-law; the cascade needs PCM; production debugging is this material</li></ul>
-            <p class="note"><b>Note:</b> design principle — negotiate a common format end-to-end instead of converting in the middle. Only possible if you know enough codecs to ask.</p></div>
-          <div class="slide"><h4><span class="sn">13</span>Milestone 2: Plumber</h4>
-            <ul><li>Upgrade Talkbox from clip-upload to continuous WebSocket streaming (the button now gates the stream)</li><li>Route mic audio through a simulated phone line (8 kHz µ-law round-trip) before STT; buffered playout for the reply</li><li>Done: still answers questions, click-free — and you report STT accuracy with vs without the phone line</li></ul>
-            <p class="note"><b>Note:</b> students see the transcript degrade through the phone line — the codec lesson made concrete. Diagnosis: screeching = endianness/scaling; rhythmic clicks = chunk-boundary resampling.</p></div>
-          <div class="slide"><h4><span class="sn">14</span>Homework</h4>
-            <ul><li>“Outbound audio clicks every 20 ms — most likely cause and fix?”</li><li>“What happens with a 0 ms playout buffer? A 500 ms one?”</li></ul></div>
-          <dl class="demo"><dt>Live demos</dt><dd>44.1 k vs 8 k listening test · REPL decode of a media message to a waveform plot · Audacity debugging of a corrupted buffer · neural noise suppression before/after</dd></dl>
+          <div class="slide"><h4><span class="sn">01</span>Last Week It Talked. Today It Acts.</h4>
+            <ul><li>Ask week-1 Talkbox to “file a ticket” — it claims success; nothing happened</li><li>The model hallucinates <em>actions</em>, not just facts</li></ul>
+            <p class="note"><b>Note:</b> open by replaying that failure live on last week's Talkbox. By end of class the same sentence produces a ticket file and an email.</p></div>
+          <div class="slide"><h4><span class="sn">02</span>Two Parts Today</h4>
+            <ul><li>Part 1 (~15 min): audio crash course, flip-through — vocabulary only</li><li>Part 2 (the meat): tools, the loop, and the flag-file worker pattern</li></ul></div>
+          <div class="slide"><h4><span class="sn">03–14</span>Audio Crash Course (flip-through, ~15 min)</h4>
+            <ul><li>Sampling &amp; int16 PCM · 8 kHz/G.711 · µ-law · 20 ms frames · resampling · endianness · media-stream anatomy · jitter/playout · AEC/NS/AGC · the assembled pipeline · “the best pipeline is no pipeline” (<code>audio/pcmu</code>)</li><li>Goal is vocabulary, not mastery — full detail stays in the notes and starter code for when audio breaks</li></ul>
+            <p class="note"><b>Note:</b> ~90 s per slide. Keep exactly one demo: the same sentence at 44.1 kHz vs 8 kHz. These slides are the debugging map for the whole course.</p></div>
+          <div class="slide"><h4><span class="sn">15</span>Part 2 · Your Agent Is All Talk</h4>
+            <ul><li>An LLM emits text — that is the complete list of its abilities</li><li>Tools: the contract that lets the model <em>request</em> actions your code performs</li></ul></div>
+          <div class="slide"><h4><span class="sn">16</span>What a Tool Actually Is</h4>
+            <ul><li>A Python function + a JSON description + glue. The model never executes anything</li><li>Mental model: a brain in a jar; tools are nerves you solder on</li></ul>
+            <p class="note"><b>Note:</b> kills the #1 misconception. A tool call is a request from an untrusted narrator — your code validates.</p></div>
+          <div class="slide"><h4><span class="sn">17</span>Declaring a Tool: The Schema</h4>
+            <ul><li><code>tools=[...]</code> on the same chat call: name · description · parameters (JSON Schema)</li><li><b>Descriptions are prompts</b>; enum-constrain what you can; <code>required</code> makes the model ask instead of invent</li></ul></div>
+          <div class="slide"><h4><span class="sn">18</span>The Tool-Call Loop</h4>
+            <ul><li><code>finish_reason:"tool_calls"</code> → run each → append assistant msg + <code>role:"tool"</code> results → call again → speech</li><li>Arguments arrive as a JSON <em>string</em>; it's a loop, not an if — cap the rounds</li></ul>
+            <p class="note"><b>Note:</b> demo the classic 400 (missing assistant tool-call message) live so they recognize it Sunday night.</p></div>
+          <div class="slide"><h4><span class="sn">19</span>Tools Force Memory</h4>
+            <ul><li>The loop is a conversation within a turn; follow-ups need history across turns</li><li>“What's the status of my ticket?” — needs memory, or a lookup tool. Do both</li></ul></div>
+          <div class="slide"><h4><span class="sn">20</span>Voice + Tools = Latency Discipline</h4>
+            <ul><li>Each tool round trip adds a full LLM call; tool execution time is dead air</li><li>Rule: voice-path tools return in &lt; ~100 ms — slow work (email, CRM, payments) never runs inside a tool</li></ul></div>
+          <div class="slide"><h4><span class="sn">21</span>The Flag-File Pattern</h4>
+            <ul><li>The tool appends one JSON line to <code>tickets/inbox.jsonl</code> and returns the id — microseconds, durable</li><li>A separate <code>worker.py</code> polls the file and acts; a job queue built from a text file (production: Redis/SQS, same shape)</li></ul></div>
+          <div class="slide"><h4><span class="sn">22</span>Two Brains: The Worker Gets Its Own LLM</h4>
+            <ul><li>Voice Grok converses; worker Grok drafts the work-order email — different prompts, no latency pressure</li><li>One-shot LLM-as-function: ticket JSON in → email out. The file is the contract between them</li></ul></div>
+          <div class="slide"><h4><span class="sn">23</span>Tool Design Rules for Voice</h4>
+            <ul><li>Few tools, sharp descriptions; validate every argument; return terse, speakable JSON</li><li>Return errors as strings — the model turns failure into conversational repair; log every call (your audit trail)</li></ul></div>
+          <div class="slide"><h4><span class="sn">24</span>Milestone 2: Dispatcher</h4>
+            <ul><li>Scaffold: cascade + memory provided; you write two schemas, two tool functions, the loop, and the worker's Grok draft</li><li>Done: “heater broken, unit 4B” → spoken ticket id → email in <code>outbox/</code> in seconds → status question answered</li></ul>
+            <p class="note"><b>Note:</b> the worker runs keyless in template mode until students upgrade it — echo-first philosophy again.</p></div>
+          <div class="slide"><h4><span class="sn">25</span>Homework</h4>
+            <ul><li>Deliverable: transcript + ticket line + email for one urgent and one routine request</li><li>“Why must the tool return before the email is drafted?” · “Same ticket filed twice — schema, prompt, or function?”</li></ul></div>
+          <dl class="demo"><dt>Live demos</dt><dd>Week-1 Talkbox lying about filing a ticket · 44.1 k vs 8 k listening test · live-code a get_time tool (~15 lines) · full Dispatcher run across three terminals (server · worker · tail -f)</dd>
+          <dt>Pitfalls to warn</dt><dd>Append order in the tool loop (the classic 400) · <code>json.loads</code> the arguments · cap the loop · worker must track processed ids</dd></dl>
         </div>
       </details>
     </div>

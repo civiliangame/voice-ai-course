@@ -6,7 +6,7 @@
 
 Voice is the oldest human interface and the hardest one to build software for. This course teaches you how modern real-time voice AI agents actually work — not the demo-video version, but the production version: audio codecs and resampling, voice activity detection and turn-taking, streaming LLM integration with tool calling, and the reliability engineering that keeps a live phone call alive when everything wants to fail mid-sentence.
 
-The course is grounded in real production systems (telephony-connected AI agents handling live phone calls at scale). Our primary platform is the **xAI API**, and you are hands-on with Grok from day one: your very first homework stitches speech-to-text → Grok → text-to-speech into an agent that answers you out loud. Every subsequent week upgrades that same agent — real streaming audio, hands-free turn detection, tools and personas, then native speech-to-speech with the **Grok Voice Agent API** (real-time, over WebSocket). In the final week we survey the wider provider landscape — Google's Gemini Live API and OpenAI's Realtime API — and you'll see that everything you learned transfers, because the concepts (and increasingly the wire protocols) are shared.
+The course is grounded in real production systems (telephony-connected AI agents handling live phone calls at scale). Our primary platform is the **xAI API**, and you are hands-on with Grok from day one: your very first homework stitches speech-to-text → Grok → text-to-speech into an agent that answers you out loud. Every subsequent week upgrades that same agent — tool calling with a background worker, real streaming audio, hands-free turn detection, personas, then native speech-to-speech with the **Grok Voice Agent API** (real-time, over WebSocket). In the final week we survey the wider provider landscape — Google's Gemini Live API and OpenAI's Realtime API — and you'll see that everything you learned transfers, because the concepts (and increasingly the wire protocols) are shared.
 
 Each week combines a 60–90 minute lecture with a build-along project milestone: by week 6 you will have a working voice agent you built yourself — one that listens, thinks, talks, uses tools, and survives interruptions.
 
@@ -41,9 +41,9 @@ You will build a browser-based voice agent in Python. It talks — via Grok — 
 | Week | Milestone | What it does |
 |------|-----------|--------------|
 | 1 | **M1 — Talkbox** | Push-to-talk Grok agent: mic clip → xAI STT → Grok → xAI TTS → spoken answer |
-| 2 | **M2 — Plumber** | Real-time plumbing: continuous audio streaming, resampling, µ-law round-trip (simulated phone line), buffered playback |
+| 2 | **M2 — Dispatcher** | Tool calling: Grok files maintenance tickets into a flag file; a second LLM worker turns them into emails |
 | 3 | **M3 — Listener** | Drop the button: VAD detects your turns automatically — a hands-free conversation |
-| 4 | **M4 — Brain** | Function calling (one real tool), a persona, and sentence-streamed TTS that cuts latency in half |
+| 4 | **M4 — Brain** | Richer tool use, a persona, and sentence-streamed TTS that cuts latency in half |
 | 5 | **M5 — Survivor** | Go native: Grok Voice Agent API (speech-to-speech) with barge-in, a watchdog, and reconnection |
 | 6 | **Demo Day** | Polish, a personality, and a 5-minute live demo |
 
@@ -56,9 +56,9 @@ We use the browser microphone instead of a real phone line so nobody needs a tel
 | Week | Lecture | Project Milestone |
 |------|---------|-------------------|
 | 1 | The Anatomy of a Voice Agent (+ xAI quickstart) | M1 — Talkbox (push-to-talk Grok cascade) |
-| 2 | Audio for Engineers Who Skipped DSP | M2 — Plumber (streaming audio pipeline) |
+| 2 | Giving the Agent Hands: Tool Calling with Grok (+ audio crash course) | M2 — Dispatcher (tools + worker) |
 | 3 | Turn-Taking: VAD, Endpointing, and Interruptions | M3 — Listener (hands-free turns) |
-| 4 | The Brain: Grok, Tools, and Prompting for Speech | M4 — Brain (tools + streaming) |
+| 4 | The Brain: Grok, Tools, and Prompting for Speech | M4 — Brain (persona + streaming) |
 | 5 | Going Native: The Voice Agent API & Real-Time Reliability | M5 — Survivor (speech-to-speech) |
 | 6 | Production, the Provider Landscape (Gemini Live) & Demo Day | Final demos |
 

@@ -1,0 +1,6 @@
+# Same five packages as week 1 — tools are an API feature, not a dependency.
+fastapi
+uvicorn[standard]
+openai          # Grok chat via the OpenAI SDK (base_url=https://api.x.ai/v1)
+python-dotenv
+requests        # xAI's native STT/TTS endpoints (/v1/stt, /v1/tts)
